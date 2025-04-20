@@ -1,5 +1,5 @@
-import React from 'react';
-import { FormData, FormErrors } from '../types/form';
+import type React from 'react';
+import type { FormData, FormErrors } from '../types/form';
 import FormInput from '../components/FormInput';
 import FormSelect from '../components/FormSelect';
 import FormRadioGroup from '../components/FormRadioGroup';

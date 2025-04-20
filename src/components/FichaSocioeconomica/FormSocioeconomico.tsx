@@ -1,107 +1,101 @@
-import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import Form from "../ficha/Form";
 import Label from "../ficha/Label";
 import Input from "../ficha/input/InputField";
 import Select from "../ficha/Select";
 import FileInput from "../ficha/input/FileInput";
-import { EyeCloseIcon, EyeIcon } from "../../icons";
 
-interface FormData {
+// Esquema de validación con Zod
+const formSchema = z.object({
   // Información Personal
-  nombres: string;
-  apellidos: string;
-  cedula: string;
-  fechaNacimiento: string;
-  genero: string;
-  estadoCivil: string;
-  telefono: string;
-  email: string;
-  direccion: string;
+  nombres: z.string()
+    .min(2, "Los nombres deben tener al menos 2 caracteres")
+    .max(50, "Los nombres no pueden exceder 50 caracteres")
+    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Los nombres solo pueden contener letras y espacios"),
+  apellidos: z.string()
+    .min(2, "Los apellidos deben tener al menos 2 caracteres")
+    .max(50, "Los apellidos no pueden exceder 50 caracteres")
+    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Los apellidos solo pueden contener letras y espacios"),
+  cedula: z.string()
+    .min(10, "La cédula debe tener al menos 10 dígitos")
+    .max(13, "La cédula no puede exceder 13 dígitos")
+    .regex(/^\d+$/, "La cédula solo puede contener números"),
+  fechaNacimiento: z.string()
+    .min(1, "La fecha de nacimiento es requerida"),
+  genero: z.string()
+    .min(1, "El género es requerido"),
+  estadoCivil: z.string()
+    .min(1, "El estado civil es requerido"),
+  telefono: z.string()
+    .min(10, "El teléfono debe tener al menos 10 dígitos")
+    .max(15, "El teléfono no puede exceder 15 dígitos")
+    .regex(/^[\d\s()-]+$/, "El teléfono solo puede contener números, espacios, guiones y paréntesis"),
+  email: z.string()
+    .email("Debe ser un correo electrónico válido"),
+  direccion: z.string()
+    .min(10, "La dirección debe tener al menos 10 caracteres")
+    .max(200, "La dirección no puede exceder 200 caracteres"),
   
   // Información Académica
-  carrera: string;
-  semestre: string;
-  promedio: string;
-  universidad: string;
-  
-  // Información Familiar
-  miembrosFamilia: Array<{
-    nombre: string;
-    parentesco: string;
-    edad: string;
-    ocupacion: string;
-    ingresos: string;
-  }>;
+  carrera: z.string()
+    .min(2, "La carrera debe tener al menos 2 caracteres")
+    .max(100, "La carrera no puede exceder 100 caracteres"),
+  semestre: z.string()
+    .min(1, "El semestre es requerido")
+    .regex(/^\d+$/, "El semestre debe ser un número"),
+  promedio: z.string()
+    .min(1, "El promedio es requerido")
+    .regex(/^\d+(\.\d{1,2})?$/, "El promedio debe ser un número con máximo 2 decimales"),
+  universidad: z.string()
+    .min(2, "La universidad debe tener al menos 2 caracteres")
+    .max(100, "La universidad no puede exceder 100 caracteres"),
   
   // Información Económica
-  ingresosFamiliares: string;
-  gastosMensuales: string;
-  vivienda: string;
-  transporte: string;
-  alimentacion: string;
-  otrosGastos: string;
+  ingresosFamiliares: z.string()
+    .min(1, "Los ingresos familiares son requeridos")
+    .regex(/^\d+(\.\d{1,2})?$/, "Los ingresos deben ser un número con máximo 2 decimales"),
+  gastosMensuales: z.string()
+    .min(1, "Los gastos mensuales son requeridos")
+    .regex(/^\d+(\.\d{1,2})?$/, "Los gastos deben ser un número con máximo 2 decimales"),
+  vivienda: z.string()
+    .min(1, "Los gastos en vivienda son requeridos")
+    .regex(/^\d+(\.\d{1,2})?$/, "Los gastos deben ser un número con máximo 2 decimales"),
+  transporte: z.string()
+    .min(1, "Los gastos en transporte son requeridos")
+    .regex(/^\d+(\.\d{1,2})?$/, "Los gastos deben ser un número con máximo 2 decimales"),
+  alimentacion: z.string()
+    .min(1, "Los gastos en alimentación son requeridos")
+    .regex(/^\d+(\.\d{1,2})?$/, "Los gastos deben ser un número con máximo 2 decimales"),
+  otrosGastos: z.string()
+    .min(1, "Los otros gastos son requeridos")
+    .regex(/^\d+(\.\d{1,2})?$/, "Los gastos deben ser un número con máximo 2 decimales"),
   
   // Documentos
-  documentos: File[];
-}
+  documentos: z.instanceof(FileList)
+    .refine((files) => files.length > 0, "Debe subir al menos un documento")
+});
+
+type FormData = z.infer<typeof formSchema>;
 
 export default function FormSocioeconomico() {
-  const [formData, setFormData] = useState<FormData>({
-    nombres: "",
-    apellidos: "",
-    cedula: "",
-    fechaNacimiento: "",
-    genero: "",
-    estadoCivil: "",
-    telefono: "",
-    email: "",
-    direccion: "",
-    carrera: "",
-    semestre: "",
-    promedio: "",
-    universidad: "",
-    miembrosFamilia: [],
-    ingresosFamiliares: "",
-    gastosMensuales: "",
-    vivienda: "",
-    transporte: "",
-    alimentacion: "",
-    otrosGastos: "",
-    documentos: []
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue
+  } = useForm<FormData>({
+    resolver: zodResolver(formSchema)
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = (data: FormData) => {
+    console.log(data);
     // Aquí se enviaría la información al backend
-    console.log(formData);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleSelectChange = (name: string) => (value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFormData(prev => ({
-        ...prev,
-        documentos: Array.from(e.target.files as FileList)
-      }));
-    }
   };
 
   return (
-    <Form onSubmit={handleSubmit} className="space-y-8">
+    <Form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
       {/* Sección 1: Información Personal */}
       <div className="rounded-lg border border-gray-200 p-6 dark:border-gray-800">
         <h3 className="mb-4 text-lg font-semibold">Información Personal</h3>
@@ -109,34 +103,34 @@ export default function FormSocioeconomico() {
           <div>
             <Label>Nombres <span className="text-error-500">*</span></Label>
             <Input
-              name="nombres"
-              value={formData.nombres}
-              onChange={handleInputChange}
+              register={register("nombres")}
+              error={!!errors.nombres}
+              hint={errors.nombres?.message}
             />
           </div>
           <div>
             <Label>Apellidos <span className="text-error-500">*</span></Label>
             <Input
-              name="apellidos"
-              value={formData.apellidos}
-              onChange={handleInputChange}
+              register={register("apellidos")}
+              error={!!errors.apellidos}
+              hint={errors.apellidos?.message}
             />
           </div>
           <div>
             <Label>Cédula <span className="text-error-500">*</span></Label>
             <Input
-              name="cedula"
-              value={formData.cedula}
-              onChange={handleInputChange}
+              register={register("cedula")}
+              error={!!errors.cedula}
+              hint={errors.cedula?.message}
             />
           </div>
           <div>
             <Label>Fecha de Nacimiento <span className="text-error-500">*</span></Label>
             <Input
               type="date"
-              name="fechaNacimiento"
-              value={formData.fechaNacimiento}
-              onChange={handleInputChange}
+              register={register("fechaNacimiento")}
+              error={!!errors.fechaNacimiento}
+              hint={errors.fechaNacimiento?.message}
             />
           </div>
           <div>
@@ -147,9 +141,12 @@ export default function FormSocioeconomico() {
                 { value: "femenino", label: "Femenino" },
                 { value: "otro", label: "Otro" }
               ]}
-              onChange={handleSelectChange("genero")}
+              onChange={(value) => setValue("genero", value)}
               placeholder="Seleccione su género"
             />
+            {errors.genero && (
+              <p className="mt-1 text-sm text-error-500">{errors.genero.message}</p>
+            )}
           </div>
           <div>
             <Label>Estado Civil <span className="text-error-500">*</span></Label>
@@ -160,9 +157,12 @@ export default function FormSocioeconomico() {
                 { value: "divorciado", label: "Divorciado/a" },
                 { value: "viudo", label: "Viudo/a" }
               ]}
-              onChange={handleSelectChange("estadoCivil")}
+              onChange={(value) => setValue("estadoCivil", value)}
               placeholder="Seleccione su estado civil"
             />
+            {errors.estadoCivil && (
+              <p className="mt-1 text-sm text-error-500">{errors.estadoCivil.message}</p>
+            )}
           </div>
         </div>
       </div>
@@ -174,34 +174,35 @@ export default function FormSocioeconomico() {
           <div>
             <Label>Carrera <span className="text-error-500">*</span></Label>
             <Input
-              name="carrera"
-              value={formData.carrera}
-              onChange={handleInputChange}
+              register={register("carrera")}
+              error={!!errors.carrera}
+              hint={errors.carrera?.message}
             />
           </div>
           <div>
             <Label>Semestre <span className="text-error-500">*</span></Label>
             <Input
-              name="semestre"
-              value={formData.semestre}
-              onChange={handleInputChange}
+              register={register("semestre")}
+              error={!!errors.semestre}
+              hint={errors.semestre?.message}
             />
           </div>
           <div>
             <Label>Promedio <span className="text-error-500">*</span></Label>
             <Input
               type="number"
-              name="promedio"
-              value={formData.promedio}
-              onChange={handleInputChange}
+              step={0.01}
+              register={register("promedio")}
+              error={!!errors.promedio}
+              hint={errors.promedio?.message}
             />
           </div>
           <div>
             <Label>Universidad <span className="text-error-500">*</span></Label>
             <Input
-              name="universidad"
-              value={formData.universidad}
-              onChange={handleInputChange}
+              register={register("universidad")}
+              error={!!errors.universidad}
+              hint={errors.universidad?.message}
             />
           </div>
         </div>
@@ -215,54 +216,60 @@ export default function FormSocioeconomico() {
             <Label>Ingresos Familiares Mensuales <span className="text-error-500">*</span></Label>
             <Input
               type="number"
-              name="ingresosFamiliares"
-              value={formData.ingresosFamiliares}
-              onChange={handleInputChange}
+              step={0.01}
+              register={register("ingresosFamiliares")}
+              error={!!errors.ingresosFamiliares}
+              hint={errors.ingresosFamiliares?.message}
             />
           </div>
           <div>
             <Label>Gastos Mensuales <span className="text-error-500">*</span></Label>
             <Input
               type="number"
-              name="gastosMensuales"
-              value={formData.gastosMensuales}
-              onChange={handleInputChange}
+              step={0.01}
+              register={register("gastosMensuales")}
+              error={!!errors.gastosMensuales}
+              hint={errors.gastosMensuales?.message}
             />
           </div>
           <div>
             <Label>Gastos en Vivienda <span className="text-error-500">*</span></Label>
             <Input
               type="number"
-              name="vivienda"
-              value={formData.vivienda}
-              onChange={handleInputChange}
+              step={0.01}
+              register={register("vivienda")}
+              error={!!errors.vivienda}
+              hint={errors.vivienda?.message}
             />
           </div>
           <div>
             <Label>Gastos en Transporte <span className="text-error-500">*</span></Label>
             <Input
               type="number"
-              name="transporte"
-              value={formData.transporte}
-              onChange={handleInputChange}
+              step={0.01}
+              register={register("transporte")}
+              error={!!errors.transporte}
+              hint={errors.transporte?.message}
             />
           </div>
           <div>
             <Label>Gastos en Alimentación <span className="text-error-500">*</span></Label>
             <Input
               type="number"
-              name="alimentacion"
-              value={formData.alimentacion}
-              onChange={handleInputChange}
+              step={0.01}
+              register={register("alimentacion")}
+              error={!!errors.alimentacion}
+              hint={errors.alimentacion?.message}
             />
           </div>
           <div>
             <Label>Otros Gastos <span className="text-error-500">*</span></Label>
             <Input
               type="number"
-              name="otrosGastos"
-              value={formData.otrosGastos}
-              onChange={handleInputChange}
+              step={0.01}
+              register={register("otrosGastos")}
+              error={!!errors.otrosGastos}
+              hint={errors.otrosGastos?.message}
             />
           </div>
         </div>
@@ -274,10 +281,13 @@ export default function FormSocioeconomico() {
         <div>
           <Label>Documentos de Soporte <span className="text-error-500">*</span></Label>
           <FileInput
-            onChange={handleFileChange}
+            {...register("documentos")}
             multiple
             accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
           />
+          {errors.documentos && (
+            <p className="mt-1 text-sm text-error-500">{errors.documentos.message}</p>
+          )}
           <p className="mt-2 text-sm text-gray-500">
             Sube los siguientes documentos: Cédula, Certificado de ingresos, Certificado de matrícula, Otros documentos de soporte
           </p>

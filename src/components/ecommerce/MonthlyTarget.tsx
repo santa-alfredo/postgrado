@@ -1,5 +1,5 @@
 import Chart from "react-apexcharts";
-import { ApexOptions } from "apexcharts";
+import type { ApexOptions } from "apexcharts";
 import { useState } from "react";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { DropdownItem } from "../ui/dropdown/DropdownItem";
@@ -38,9 +38,7 @@ export default function MonthlyTarget() {
             fontWeight: "600",
             offsetY: -40,
             color: "#1D2939",
-            formatter: function (val) {
-              return val + "%";
-            },
+            formatter: (val) => val + "%",
           },
         },
       },
