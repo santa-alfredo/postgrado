@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
-import { useState} from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useSpellcheck } from "../../hooks/useSpellcheck";
 import Form from "../ficha/Form";
 import Label from "../ficha/Label";
 import Input from "../ficha/input/InputField";
@@ -90,44 +90,12 @@ export default function FormSocioeconomico() {
     resolver: zodResolver(formSchema)
   });
 
-  const [suggestions, setSuggestions] = useState<string>("");
+  const { suggestions, checkSpelling } = useSpellcheck();
 
   const onSubmit = (data: FormData) => {
     console.log(data);
     // Aquí se enviaría la información al backend
   };
-
-  async function checkSpelling(text: string): Promise<string> {
-    const response = await fetch("https://api.languagetool.org/v2/check", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        text,
-        language: "es",
-      }),
-    });
-  
-    const data = await response.json();
-  
-    let corrected = text;
-    let offsetShift = 0;
-  
-    for (const match of data.matches) {
-      const from = match.offset + offsetShift;
-      const to = from + match.length;
-      const replacement = match.replacements?.[0]?.value;
-  
-      if (replacement) {
-        corrected =
-          corrected.slice(0, from) + replacement + corrected.slice(to);
-  
-        // Ajustar el offset acumulado por los cambios de longitud
-        offsetShift += replacement.length - match.length;
-      }
-    }
-  
-    return corrected;
-  }
 
   return (
     <Form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
@@ -138,16 +106,14 @@ export default function FormSocioeconomico() {
           <div>
             <Label>Nombres <span className="text-error-500">*</span></Label>
             <Input
-              register={register("nombres", { 
+              register={register("nombres", {
                 onBlur: async (e) => {
                   const text = e.target.value;
-                  const sugerencia = await checkSpelling(text);
-                    
-                  setValue("nombres", sugerencia);
-                  setSuggestions(`Quizás quisiste decir: ${sugerencia}`);
+                  const { correctedText } = await checkSpelling(text);
+                  setValue("nombres", correctedText);
                 }
               })}
-              error={!!errors.nombres || !!suggestions }
+              error={!!errors.nombres || !!suggestions}
               hint={errors.nombres?.message}
               errorSuggestions={suggestions}
             />

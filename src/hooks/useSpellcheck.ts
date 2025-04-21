@@ -1,52 +1,50 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
+
+interface SpellCheckResult {
+  correctedText: string;
+  suggestions: string;
+}
 
 export function useSpellcheck() {
-  const [suggestion, setSuggestion] = useState("");
-  const [isChecking, setIsChecking] = useState(false);
+  const [suggestions, setSuggestions] = useState<string>("");
 
-  const checkSpelling = useCallback(async (text: string) => {
-    console.log("text", text);
-    setIsChecking(true);
+  async function checkSpelling(text: string): Promise<SpellCheckResult> {
+    const response = await fetch("https://api.languagetool.org/v2/check", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        text,
+        language: "es",
+      }),
+    });
 
-    try {
-      const res = await fetch("https://api.languagetool.org/v2/check", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          text,
-          language: "es",
-        }),
-      });
+    const data = await response.json();
 
-      const data = await res.json();
+    let corrected = text;
+    let offsetShift = 0;
 
-      let corrected = text;
-      let offsetShift = 0;
+    for (const match of data.matches) {
+      const from = match.offset + offsetShift;
+      const to = from + match.length;
+      const replacement = match.replacements?.[0]?.value;
 
-      for (const match of data.matches) {
-        const from = match.offset + offsetShift;
-        const to = from + match.length;
-        const replacement = match.replacements?.[0]?.value;
-
-        if (replacement) {
-          corrected =
-            corrected.slice(0, from) + replacement + corrected.slice(to);
-          offsetShift += replacement.length - match.length;
-        }
+      if (replacement) {
+        corrected = corrected.slice(0, from) + replacement + corrected.slice(to);
+        offsetShift += replacement.length - match.length;
       }
-
-      // Solo sugerimos si es distinto al original
-      if (corrected !== text) {
-        setSuggestion(corrected);
-      } else {
-        setSuggestion("");
-      }
-    } catch (err) {
-      console.error("Spellcheck error:", err);
     }
 
-    setIsChecking(false);
-  }, []);
+    const result: SpellCheckResult = {
+      correctedText: corrected,
+      suggestions: corrected !== text ? `Quizás quisiste decir: ${corrected}` : ""
+    };
 
-  return { suggestion, isChecking, checkSpelling };
+    setSuggestions(result.suggestions);
+    return result;
+  }
+
+  return {
+    suggestions,
+    checkSpelling
+  };
 }
