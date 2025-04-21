@@ -144,7 +144,6 @@ export default function SignInForm() {
                     placeholder="info@gmail.com" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    required
                   />
                 </div>
                 <div>
@@ -157,7 +156,6 @@ export default function SignInForm() {
                       placeholder="Enter your password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      required
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -186,7 +184,7 @@ export default function SignInForm() {
                   </Link>
                 </div>
                 <div>
-                  <Button className="w-full" size="sm" type="submit">
+                  <Button className="w-full" size="sm">
                     Sign in
                   </Button>
                 </div>

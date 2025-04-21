@@ -1,7 +1,6 @@
-import type React from 'react';
+import React from 'react';
 import type { FormData, FormErrors } from '../types/form';
 import FormInput from '../components/FormInput';
-import FormSelect from '../components/FormSelect';
 import FormRadioGroup from '../components/FormRadioGroup';
 
 interface PersonalInfoProps {
@@ -36,6 +35,7 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
         <FormInput
           id="firstName"
+          name="firstName"
           label="Nombres"
           value={formData.firstName || ''}
           onChange={handleChange}
@@ -46,6 +46,7 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
         
         <FormInput
           id="lastName"
+          name="lastName"
           label="Apellidos"
           value={formData.lastName || ''}
           onChange={handleChange}
@@ -56,6 +57,7 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
         
         <FormInput
           id="idNumber"
+          name="idNumber"
           label="Número de identificación (cédula/pasaporte)"
           value={formData.idNumber || ''}
           onChange={handleChange}
@@ -66,6 +68,7 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
         
         <FormInput
           id="birthDate"
+          name="birthDate"
           label="Fecha de nacimiento"
           type="date"
           value={formData.birthDate || ''}
@@ -78,17 +81,18 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
           <FormRadioGroup
             id="gender"
             label="Género"
+            name="gender"
             value={formData.gender || ''}
             onChange={handleGenderChange}
             options={genderOptions}
             error={errors.gender}
-            required
           />
         </div>
         
         <div className="md:col-span-2">
           <FormInput
             id="address"
+            name="address"
             label="Dirección de domicilio"
             value={formData.address || ''}
             onChange={handleChange}
@@ -100,6 +104,7 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
         
         <FormInput
           id="phone"
+          name="phone"
           label="Teléfono"
           type="tel"
           value={formData.phone || ''}
@@ -111,6 +116,7 @@ const PersonalInfo: React.FC<PersonalInfoProps> = ({
         
         <FormInput
           id="email"
+          name="email"
           label="Correo electrónico"
           type="email"
           value={formData.email || ''}
