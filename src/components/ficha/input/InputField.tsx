@@ -16,6 +16,7 @@ interface InputProps {
   disabled?: boolean;
   success?: boolean;
   error?: boolean;
+  errorSuggestions?: string;
   hint?: string;
   // Propiedades de react-hook-form
   register?: UseFormRegisterReturn;
@@ -35,6 +36,7 @@ const Input: FC<InputProps> = ({
   disabled = false,
   success = false,
   error = false,
+  errorSuggestions,
   hint,
   register,
 }) => {
@@ -67,17 +69,17 @@ const Input: FC<InputProps> = ({
         {...register}
       />
 
-      {hint && (
+      {(hint || errorSuggestions) && (
         <p
           className={`mt-1.5 text-xs ${
-            error
+            error || errorSuggestions
               ? "text-error-500"
               : success
               ? "text-success-500"
               : "text-gray-500"
           }`}
         >
-          {hint}
+          {hint || errorSuggestions}
         </p>
       )}
     </div>
