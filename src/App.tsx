@@ -83,7 +83,7 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <Router>
+    <Router basename="/postgrado">
       <AuthProvider>
         <ScrollToTop />
         <AppRoutes />

@@ -24,7 +24,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  base: '/postgrado/',
+  base: '/postgrado',
   build: {
     outDir: '/var/www/postgrado',
     assetsDir: 'assets',
