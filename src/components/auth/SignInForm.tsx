@@ -7,11 +7,6 @@ import Checkbox from "../ficha/input/Checkbox";
 import Button from "../ui/button/Button";
 import { useAuth } from "../../context/AuthContext";
 
-interface LoginResponse {
-  success: boolean;
-  token?: string;
-  message?: string;
-}
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -27,31 +22,10 @@ export default function SignInForm() {
     setError("");
 
     try {
-      // Simular llamada al backend para autenticación
-      const response = await new Promise<LoginResponse>((resolve) => {
-        setTimeout(() => {
-          if (email === "demo@example.com" && password === "password") {
-            resolve({
-              success: true,
-              token: "demo-token-123"
-            });
-          } else {
-            resolve({
-              success: false,
-              message: "Credenciales inválidas"
-            });
-          }
-        }, 1000);
-      });
-
-      if (response.success && response.token) {
-        login(response.token);
-        navigate("/");
-      } else {
-        setError(response.message || "Error al intentar iniciar sesión");
-      }
+      await login(email, password);
+      navigate("/ficha");
     } catch (error) {
-      setError("Error al intentar iniciar sesión");
+      setError("Error al iniciar sesión. Por favor verifica tus credenciales.");
     }
   };
 
@@ -134,60 +108,58 @@ export default function SignInForm() {
                 {error}
               </div>
             )}
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-6">
-                <div>
-                  <Label>
-                    Email <span className="text-error-500">*</span>{" "}
-                  </Label>
-                  <Input 
-                    placeholder="info@gmail.com" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label>
+                  Email <span className="text-error-500">*</span>{" "}
+                </Label>
+                <Input 
+                  placeholder="info@gmail.com" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>
+                  Password <span className="text-error-500">*</span>{" "}
+                </Label>
+                <div className="relative">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                   />
-                </div>
-                <div>
-                  <Label>
-                    Password <span className="text-error-500">*</span>{" "}
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                    <span
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
-                    >
-                      {showPassword ? (
-                        <EyeIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
-                      ) : (
-                        <EyeCloseIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
-                      )}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Checkbox checked={isChecked} onChange={setIsChecked} />
-                    <span className="block font-normal text-gray-700 text-theme-sm dark:text-gray-400">
-                      Keep me logged in
-                    </span>
-                  </div>
-                  <Link
-                    to="/reset-password"
-                    className="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400"
+                  <span
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
                   >
-                    Forgot password?
-                  </Link>
+                    {showPassword ? (
+                      <EyeIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
+                    ) : (
+                      <EyeCloseIcon className="fill-gray-500 dark:fill-gray-400 size-5" />
+                    )}
+                  </span>
                 </div>
-                <div>
-                  <Button className="w-full" size="sm">
-                    Sign in
-                  </Button>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Checkbox checked={isChecked} onChange={setIsChecked} />
+                  <span className="block font-normal text-gray-700 text-theme-sm dark:text-gray-400">
+                    Keep me logged in
+                  </span>
                 </div>
+                <Link
+                  to="/reset-password"
+                  className="text-sm text-brand-500 hover:text-brand-600 dark:text-brand-400"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+              <div>
+                <Button className="w-full" size="sm">
+                  Sign in
+                </Button>
               </div>
             </form>
 

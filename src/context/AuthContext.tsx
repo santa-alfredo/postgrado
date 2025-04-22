@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const url = new URL(window.location.href);
         url.searchParams.delete('token');
         window.history.replaceState({}, '', url.toString());
-        
+
         await verifyToken();
       } else {
         throw new Error('Error al establecer el token');
@@ -92,9 +92,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (response.ok) {
         const data = await response.json();
+        console.log(data);
         setIsAuthenticated(true);
+        console.log(data.user);
         setUser(data.user);
-        navigate('/postgrado');
+        // navigate('/ficha');
       } else {
         throw new Error('Error al iniciar sesión');
       }
@@ -117,7 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsAuthenticated(false);
       setUser(null);
-      navigate('/postgrado/signin');
+      navigate('/signin');
     }
   };
 
