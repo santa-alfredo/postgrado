@@ -1,101 +1,147 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
+const API_BASE = import.meta.env.VITE_API_BASE;
+
+
+interface User {
+  name: string;
+  email: string;
+}
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  user: any | null;
-  login: (token: string) => void;
-  logout: () => void;
   isLoading: boolean;
-}
-
-interface AuthResponse {
-  success: boolean;
-  user?: {
-    id: number;
-    name: string;
-    email: string;
-  };
-  message?: string;
+  user: User | null;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
-  const verifyToken = async (token: string) => {
+  const setTokenFromUrl = async (token: string) => {
     try {
-      // Simular llamada al backend para verificar el token
-      const response = await new Promise<AuthResponse>((resolve) => {
-        setTimeout(() => {
-          resolve({
-            success: true,
-            user: {
-              id: 1,
-              name: 'Usuario Demo',
-              email: 'demo@example.com'
-            }
-          });
-        }, 1000);
+      const response = await fetch(`${API_BASE}/auth/set-token`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token }),
       });
 
-      if (response.success && response.user) {
-        setIsAuthenticated(true);
-        setUser(response.user);
-        localStorage.setItem('authToken', token);
+      if (response.ok) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('token');
+        window.history.replaceState({}, '', url.toString());
         
-        // Si estamos en la página de login, redirigir al dashboard
-        if (location.pathname === '/signin') {
-          navigate('/');
-        }
+        await verifyToken();
       } else {
-        logout();
+        throw new Error('Error al establecer el token');
       }
     } catch (error) {
-      console.error('Error verifying token:', error);
-      logout();
+      console.error('Error al establecer token:', error);
+      setIsAuthenticated(false);
+      setUser(null);
+      navigate('/signin');
+    }
+  };
+
+  const verifyToken = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/auth/me`, {
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log(data);
+        setIsAuthenticated(true);
+        setUser(data.user);
+      } else {
+        setIsAuthenticated(false);
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('Error al verificar token:', error);
+      setIsAuthenticated(false);
+      setUser(null);
+      navigate('/signin');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const login = async (email: string, password: string) => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`${API_BASE}/auth/login`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setIsAuthenticated(true);
+        setUser(data.user);
+        navigate('/postgrado');
+      } else {
+        throw new Error('Error al iniciar sesión');
+      }
+    } catch (error) {
+      console.error('Error al iniciar sesión:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await fetch(`${API_BASE}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    } finally {
+      setIsAuthenticated(false);
+      setUser(null);
+      navigate('/postgrado/signin');
+    }
+  };
+
   useEffect(() => {
-    // Verificar token en la URL
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(location.search);
     const token = urlParams.get('token');
     
     if (token) {
-      verifyToken(token);
+      setTokenFromUrl(token);
     } else {
-      // Si no hay token, verificar si hay uno en localStorage
-      const storedToken = localStorage.getItem('authToken');
-      if (storedToken) {
-        verifyToken(storedToken);
-      } else {
-        setIsLoading(false);
-      }
+      verifyToken();
     }
-  }, []);
-
-  const login = (token: string) => {
-    setIsLoading(true);
-    verifyToken(token);
-  };
-
-  const logout = () => {
-    setIsAuthenticated(false);
-    setUser(null);
-    localStorage.removeItem('authToken');
-    navigate('/signin');
-  };
+  }, [location]);
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, isLoading }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        isLoading,
+        user,
+        login,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -104,7 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth debe ser usado dentro de un AuthProvider");
   }
   return context;
 } 
