@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useSpellcheck } from "../../hooks/useSpellcheck";
@@ -43,12 +43,31 @@ const formSchema = z.object({
   carrera: z.string()
     .min(2, "La carrera debe tener al menos 2 caracteres")
     .max(100, "La carrera no puede exceder 100 caracteres"),
+  colegio: z.string()
+    .min(2, "El nombre del colegio debe tener al menos 2 caracteres")
+    .max(100, "El nombre del colegio no puede exceder 100 caracteres"),
+  tipoColegio: z.string()
+    .min(1, "El tipo de colegio es requerido"),
+  anioGraduacion: z.string()
+    .min(4, "El año de graduación debe tener 4 dígitos")
+    .max(4, "El año de graduación debe tener 4 dígitos"),
+    // .regex(/^\d{4}$/, "El año de graduación debe ser un número de 4 dígitos")
+    // .transform((val) => parseInt(val, 10))
+    // .refine((val) => val >= 1990 && val <= new Date().getFullYear(), "El año de graduación debe estar entre 1990 y el año actual"),
   semestre: z.string()
     .min(1, "El semestre es requerido")
     .regex(/^\d+$/, "El semestre debe ser un número"),
   promedio: z.string()
-    .min(1, "El promedio es requerido")
-    .regex(/^\d+(\.\d{1,2})?$/, "El promedio debe ser un número con máximo 2 decimales"),
+    .min(1, "El promedio es requerido"),
+    // .regex(/^\d+(\.\d{1,2})?$/, "El promedio debe ser un número con máximo 2 decimales")
+    // .transform((val) => parseFloat(val))
+    // .refine((val) => val >= 0 && val <= 10, "El promedio debe estar entre 0 y 10"),
+  estudioOtraUniversidad: z.boolean(),
+  otraUniversidad: z.object({
+    nombre: z.string()
+      .min(2, "La universidad debe tener al menos 2 caracteres")
+      .max(100, "La universidad no puede exceder 100 caracteres"),
+  }).optional(),
   universidad: z.string()
     .min(2, "La universidad debe tener al menos 2 caracteres")
     .max(100, "La universidad no puede exceder 100 caracteres"),
@@ -85,12 +104,15 @@ export default function FormSocioeconomico() {
     register,
     handleSubmit,
     formState: { errors },
-    setValue
+    setValue,
+    control
   } = useForm<FormData>({
     resolver: zodResolver(formSchema)
   });
 
   const { suggestions, checkSpelling } = useSpellcheck();
+
+  const estudioOtraUniversidad = useWatch({ control, name: "estudioOtraUniversidad" });
 
   const onSubmit = (data: FormData) => {
     console.log(data);
@@ -174,6 +196,24 @@ export default function FormSocioeconomico() {
               <p className="mt-1 text-sm text-error-500">{errors.estadoCivil.message}</p>
             )}
           </div>
+          <div>
+            <Label>Celular <span className="text-error-500">*</span></Label>
+            <Input
+              type="tel"
+              register={register("telefono")}
+              error={!!errors.telefono}
+              hint={errors.telefono?.message}
+            />
+          </div>
+          <div>
+            <Label>Correo Electrónico <span className="text-error-500">*</span></Label>
+            <Input
+              type="email"
+              register={register("email")}
+              error={!!errors.email}
+              hint={errors.email?.message}
+            />
+          </div>
         </div>
       </div>
 
@@ -181,6 +221,52 @@ export default function FormSocioeconomico() {
       <div className="rounded-lg border border-gray-200 p-6 dark:border-gray-800">
         <h3 className="mb-4 text-lg font-semibold">Información Académica</h3>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <div>
+            <Label>Colegio <span className="text-error-500">*</span></Label>
+            <Input
+              register={register("colegio")}
+              error={!!errors.colegio}
+              hint={errors.colegio?.message}
+            />
+          </div>
+          <div>
+            <Label>Tipo de Colegio <span className="text-error-500">*</span></Label>
+            <Select
+              options={[
+                { value: "publico", label: "Público" },
+                { value: "privado", label: "Privado" }
+              ]}
+              onChange={(value) => setValue("tipoColegio", value)}
+              placeholder="Seleccione el tipo de colegio"
+            />
+            {errors.tipoColegio && (
+              <p className="mt-1 text-sm text-error-500">{errors.tipoColegio.message}</p>
+            )}
+          </div>
+
+          <div>
+            <Label>Año de Graduación <span className="text-error-500">*</span></Label>
+            <Input
+              type="number"
+              register={register("anioGraduacion")}
+              error={!!errors.anioGraduacion}
+              hint={errors.anioGraduacion?.message}
+            />
+          </div>
+          <div>
+            <Label>Promedio de Grado <span className="text-error-500">*</span></Label>
+            <Input
+              type="number"
+              step={0.01}
+              register={register("promedio")}
+              error={!!errors.promedio}
+              hint={errors.promedio?.message}
+            />
+          </div>
+          
+          <div className="col-span-1 sm:col-span-2">
+            <h3 className="text-lg font-semibold">Universidad UMET</h3>
+          </div>
           <div>
             <Label>Carrera <span className="text-error-500">*</span></Label>
             <Input
@@ -192,23 +278,30 @@ export default function FormSocioeconomico() {
           <div>
             <Label>Semestre <span className="text-error-500">*</span></Label>
             <Input
+              type="number"
               register={register("semestre")}
               error={!!errors.semestre}
               hint={errors.semestre?.message}
             />
           </div>
-          <div>
-            <Label>Promedio <span className="text-error-500">*</span></Label>
-            <Input
-              type="number"
-              step={0.01}
-              register={register("promedio")}
-              error={!!errors.promedio}
-              hint={errors.promedio?.message}
-            />
+          <div className="col-span-1 sm:col-span-2">
+            <label htmlFor="estudioOtraUniversidad" className="text-lg font-semibold">
+              ¿Estudio en otra Universidad? 
+              <input type="checkbox" id="estudioOtraUniversidad" {...register("estudioOtraUniversidad")} />
+            </label>
           </div>
+          {estudioOtraUniversidad && (
+          <div className="space-y-2 p-4 border rounded-md mt-2 bg-gray-50">
+            <div>
+              <label>Nombre de la universidad</label>
+              <input {...register("otraUniversidad.nombre")} className="input" />
+              {errors.otraUniversidad?.nombre && <p className="text-red-500 text-sm">{errors.otraUniversidad.nombre.message}</p>}
+            </div>
+          </div>
+          )}
+
           <div>
-            <Label>Universidad <span className="text-error-500">*</span></Label>
+          <Label>Universidad <span className="text-error-500">*</span></Label>
             <Input
               register={register("universidad")}
               error={!!errors.universidad}
