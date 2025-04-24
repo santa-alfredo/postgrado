@@ -1,4 +1,4 @@
-import { useForm, useWatch } from "react-hook-form";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useSpellcheck } from "../../hooks/useSpellcheck";
@@ -6,7 +6,6 @@ import Form from "../ficha/Form";
 import Label from "../ficha/Label";
 import Input from "../ficha/input/InputField";
 import Select from "../ficha/Select";
-import FileInput from "../ficha/input/FileInput";
 import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 const API_BASE = import.meta.env.VITE_API_BASE;
@@ -82,20 +81,11 @@ const formSchema = z.object({
     .max(100, "El nombre del colegio no puede exceder 100 caracteres"),
   tipoColegio: z.string()
     .min(1, "El tipo de colegio es requerido"),
-  anioGraduacion: z.string()
-    .min(4, "El año de graduación debe tener 4 dígitos")
-    .max(4, "El año de graduación debe tener 4 dígitos")
-    .regex(/^\d{4}$/, "El año de graduación debe ser un número de 4 dígitos")
-    .transform((val) => parseInt(val, 10))
-    .refine((val) => val >= 1990 && val <= new Date().getFullYear(), "El año de graduación debe estar entre 1990 y el año actual"),
+  anioGraduacion: z.number().int().min(1900, 'Año inválido').max(2025, 'Año inválido'),
   semestre: z.string()
     .min(1, "El semestre es requerido")
     .regex(/^\d+$/, "El semestre debe ser un número"),
-  promedio: z.string()
-    .min(1, "El promedio es requerido")
-    .regex(/^\d+(\.\d{1,2})?$/, "El promedio debe ser un número con máximo 2 decimales")
-    .transform((val) => parseFloat(val))
-    .refine((val) => val >= 0 && val <= 10, "El promedio debe estar entre 0 y 10"),
+  promedio: z.number().min(0).max(10),
   estudioOtraUniversidad: z.boolean().optional(),
   otraUniversidad: z.object({
     nombre: z.string()
@@ -128,6 +118,81 @@ const formSchema = z.object({
     .min(1, "Los otros gastos son requeridos")
     .regex(/^\d+(\.\d{1,2})?$/, "Los gastos deben ser un número con máximo 2 decimales"),
   
+  // Información Laboral
+  situacionLaboral: z.enum(["empleado", "desempleado", "negocio propio", "pensionado", "otro"], {required_error: "La situación laboral es requerida"}),
+  laboral: z.discriminatedUnion("tipo", 
+    [
+      z.object({
+        tipo: z.literal("empleado"),
+        empresa: z.string()
+          .min(2, "La empresa debe tener al menos 2 caracteres")
+          .max(100, "La empresa no puede exceder 100 caracteres"),
+        cargo: z.string()
+          .min(2, "El cargo debe tener al menos 2 caracteres")
+          .max(100, "El cargo no puede exceder 100 caracteres"),
+        sueldo: z.number()
+          .min(0, "El sueldo no puede ser negativo")
+          .max(1000000, "El sueldo no puede exceder 1000000"),     
+      }),
+      z.object({
+        tipo: z.literal("negocio propio"),
+        negocio: z.string()
+          .min(2, "El negocio debe tener al menos 2 caracteres")
+          .max(100, "El negocio no puede exceder 100 caracteres"),
+        ingresos: z.number()
+          .min(0, "Los ingresos no pueden ser negativos")
+          .max(1000000, "Los ingresos no pueden exceder 1000000"),
+        gastos: z.number()
+          .min(0, "Los gastos no pueden ser negativos")
+          .max(1000000, "Los gastos no pueden exceder 1000000"),
+        actividades: z.string()
+          .min(2, "Las actividades deben tener al menos 2 caracteres")
+          .max(100, "Las actividades no pueden exceder 100 caracteres"),
+      }),
+      z.object({
+        tipo: z.literal('pensionado'),
+        fuente: z
+          .string()
+          .min(2, 'La fuente de la pensión debe tener al menos 2 caracteres')
+          .max(100, 'La fuente no puede exceder 100 caracteres'),
+        monto: z
+          .number({ invalid_type_error: 'El monto debe ser un número' })
+          .min(0, 'El monto no puede ser negativo'),
+      }),
+      z.object({
+        tipo: z.literal('otro'),
+        descripcion: z
+          .string()
+          .min(2, 'La descripción debe tener al menos 2 caracteres')
+          .max(100, 'La descripción no puede exceder 100 caracteres'),
+      }),
+    ]
+  ).optional(),
+
+  // Relaciones Personales
+  relacionCompa: z.enum(["excelente", "buena", "regular", "mala"], {required_error: "La relación con compañeros es requerida"}),
+  integracionUmet: z.enum(["si", "no"], {required_error: "La integración en UMET es requerida"}),
+  relacionDocente: z.enum(["excelente", "buena", "regular", "mala"], {required_error: "La relación con el docente es requerida"}),
+  relacionPadres: z.enum(["excelente", "buena", "regular", "mala"], {required_error: "La relación con los padres es requerida"}),
+  relacionPareja: z.enum(["excelente", "buena", "regular", "mala"], {required_error: "La relación con la pareja es requerida"}).optional(),
+
+  // Familia
+  estadoFamiliar: z.enum(["cabezaHogar", "vivePadres", "independiente"], {required_error: "El estado familiar es requerido"}),
+  miembros: z
+    .array(
+      z.object({
+        sueldo: z
+          .number({ invalid_type_error: 'El sueldo debe ser un número' })
+          .min(0, 'El sueldo no puede ser negativo'),
+        edad: z.number()
+          .min(1, "La edad es requerida")
+          .max(100, "La edad no puede exceder 100 años"),
+        parentesco: z.enum(["hijo", "padreMadre", "hermano", "conyuge", "otro"], {required_error: "El parentesco es requerido"}),
+        ocupacion: z.string()
+          .optional(),
+      })
+    )
+    .optional(),
   // Documentos
   // documentos: z.instanceof(FileList)
   //   .refine((files) => files.length > 0, "Debe subir al menos un documento")
@@ -150,12 +215,37 @@ export default function FormSocioeconomico() {
     setValue,
     control
   } = useForm<FormData>({
-    resolver: zodResolver(formSchema)
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: '',
+      nombres: '',
+      cedula: '',
+      fechaNacimiento: '',
+      genero: undefined,
+      estadoCivil: undefined,
+      telefono: '',
+      direccion: '',
+      provinciaId: '',
+      ciudadId: '',
+      parroquiaId: '',
+      anioGraduacion: undefined,
+      situacionLaboral: undefined,
+      laboral: undefined,
+      estadoFamiliar: undefined,
+      miembros: [],
+    }
   });
 
-  const { suggestions, checkSpelling } = useSpellcheck();
-
+  // const { suggestions, checkSpelling } = useSpellcheck();
+  const { suggestions} = useSpellcheck();
   const estudioOtraUniversidad = useWatch({ control, name: "estudioOtraUniversidad" });
+  const situacionLaboral = useWatch({ control, name: 'situacionLaboral' });
+  const estadoCivil = useWatch({ control, name: 'estadoCivil' });
+  const estadoFamiliar = useWatch({ control, name: 'estadoFamiliar' });
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'miembros',
+  });
 
   const { user } = useAuth(); // Obtener el usuario del contexto
   const onSubmit = async (data: FormData) => {
@@ -193,7 +283,7 @@ export default function FormSocioeconomico() {
   const [parroquiasFiltradas, setParroquiasFiltradas] = useState<Ubicacion[]>([]);
 
   // Función para manejar el cambio de provincia
-  const handleProvinciaChange = (e) => {
+  const handleProvinciaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const provinciaId = e.target.value;
     
     // Actualizar el valor de provinciaId en el formulario
@@ -216,7 +306,7 @@ export default function FormSocioeconomico() {
   };
 
   // Función para manejar el cambio de ciudad
-  const handleCiudadChange = (e) => {
+  const handleCiudadChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const ciudadId = e.target.value;
     
     // Actualizar el valor de ciudadId en el formulario
@@ -235,6 +325,31 @@ export default function FormSocioeconomico() {
     // Resetear parroquia
     setValue("parroquiaId", "");
   };
+
+  // Limpiar campos de laboral cuando cambia situacionLaboral
+  const handleSituacionLaboralChange = (value: string) => {
+    setValue('situacionLaboral', value as 'empleado' | 'negocio propio' | 'desempleado' | 'pensionado' | 'otro', { shouldValidate: true });
+    if (value === 'desempleado') {
+      console.log('desempleado', value);
+      setValue('laboral', undefined, { shouldValidate: true });
+    } else {
+      switch (value) {
+        case 'empleado':
+          setValue('laboral', { tipo: 'empleado', empresa: '', cargo: '', sueldo: 0 }, { shouldValidate: true });
+          break;
+        case 'negocio propio':
+          setValue('laboral', { tipo: 'negocio propio', negocio: '', ingresos: 0, gastos: 0, actividades: '' }, { shouldValidate: true });
+          break;
+        case 'pensionado':
+          setValue('laboral', { tipo: 'pensionado', fuente: '', monto: 0 }, { shouldValidate: true });
+          break;
+        case 'otro':
+          setValue('laboral', { tipo: 'otro', descripcion: '' }, { shouldValidate: true });
+          break;
+      }
+    }
+  };
+
   useEffect(() => {
     const fetchUserData = async () => {
       if (!user?.name) return;
@@ -376,7 +491,7 @@ export default function FormSocioeconomico() {
             <Label>Año de Graduación <span className="text-error-500">*</span></Label>
             <Input
               type="number"
-              register={register("anioGraduacion")}
+              register={register("anioGraduacion", { valueAsNumber: true })}
               error={!!errors.anioGraduacion}
               hint={errors.anioGraduacion?.message}
             />
@@ -386,7 +501,7 @@ export default function FormSocioeconomico() {
             <Input
               type="number"
               step={0.01}
-              register={register("promedio")}
+              register={register("promedio", { valueAsNumber: true })}
               error={!!errors.promedio}
               hint={errors.promedio?.message}
             />
@@ -600,24 +715,337 @@ export default function FormSocioeconomico() {
         <h3 className="mb-4 text-lg font-semibold">Información Laboral</h3>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
-            <Label>Empresa <span className="text-error-500">*</span></Label>  
-            <Input
-              register={register("empresa")}
-              error={!!errors.empresa}
-              hint={errors.empresa?.message}
-            />
-          </div>
-          <div>
-            <Label>Cargo <span className="text-error-500">*</span></Label>
-            <Input
-              register={register("cargo")}
-              error={!!errors.cargo}
-              hint={errors.cargo?.message}
-            />
+          <Label>Situación Laboral <span className="text-error-500">*</span></Label>
+          <Select
+            options={[
+              { value: "empleado", label: "Empleado" },
+              { value: "negocio propio", label: "Negocio propio" },
+              { value: "desempleado", label: "Desempleado" },
+              { value: "pensionado", label: "Pensionado" },
+              { value: "otro", label: "Otro" }
+            ]}
+            onChange={(value) => {
+              setValue('situacionLaboral', value as 'empleado' | 'negocio propio' | 'desempleado' | 'pensionado' | 'otro', { shouldValidate: true });
+              handleSituacionLaboralChange(value);
+            }}
+            placeholder="Seleccione su situación laboral"
+          >
+          </Select>
+            {errors.situacionLaboral && (
+              <p className="mt-1 text-sm text-error-500">{errors.situacionLaboral.message}</p>
+            )}
           </div>
         </div>
+        
+        {/* Campos condicionales para Empleado */}
+        {situacionLaboral === "empleado" && (
+          <div>
+            <div>
+              <Label>Empresa <span className="text-error-500">*</span></Label>
+              <Input
+                register={register("laboral.empresa")}
+                error={!!(errors.laboral as any)?.empresa}
+                hint={(errors.laboral as any)?.empresa?.message}
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <div>
+                <Label>Cargo <span className="text-error-500">*</span></Label>
+                <Input
+                  register={register("laboral.cargo")}
+                  error={!!(errors.laboral as any)?.cargo}
+                  hint={(errors.laboral as any)?.cargo?.message}
+                />
+              </div>
+              <div>
+                <Label>Sueldo <span className="text-error-500">*</span></Label>
+                <Input
+                  type="number"
+                  step={0.01}
+                  register={register("laboral.sueldo")}
+                  error={!!(errors.laboral as any)?.sueldo}
+                  hint={(errors.laboral as any)?.sueldo?.message}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+        {situacionLaboral === "negocio propio" && (
+          <div>
+            <div>
+              <Label>Nombre delNegocio <span className="text-error-500">*</span></Label>
+              <Input
+                register={register("laboral.negocio")}
+                error={!!(errors.laboral as any)?.negocio}
+                hint={(errors.laboral as any)?.negocio?.message}
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div>
+              <Label>Ingresos <span className="text-error-500">*</span></Label>
+              <Input
+                type="number"
+                step={0.01}
+                register={register("laboral.ingresos")}
+                error={!!(errors.laboral as any)?.ingresos}
+                hint={(errors.laboral as any)?.ingresos?.message}
+              />
+            </div>
+            <div>
+              <Label>Gastos <span className="text-error-500">*</span></Label>
+              <Input
+                type="number"
+                step={0.01} 
+                register={register("laboral.gastos")}
+                error={!!(errors.laboral as any)?.gastos}
+                hint={(errors.laboral as any)?.gastos?.message}
+              />
+            </div>
+            </div>
+            <div>
+              <Label>Actividades <span className="text-error-500">*</span></Label>
+              <Input
+                register={register("laboral.actividades")}
+                error={!!(errors.laboral as any)?.actividades}
+                hint={(errors.laboral as any)?.actividades?.message}
+              />
+            </div>
+          </div>
+        )}
+
+        {situacionLaboral === "pensionado" && (
+          <div>
+            <Label>Fuente de la pensión <span className="text-error-500">*</span></Label>
+            <Input
+              register={register("laboral.fuente")}
+              error={!!(errors.laboral as any)?.fuente}
+              hint={(errors.laboral as any)?.fuente?.message}
+            />
+          </div>
+        )}
+
+        {situacionLaboral === "otro" && (
+          <div>
+            <Label>Descripción <span className="text-error-500">*</span></Label>
+            <Input
+              register={register("laboral.descripcion")}
+              error={!!(errors.laboral as any)?.descripcion}
+              hint={(errors.laboral as any)?.descripcion?.message}
+            />
+          </div>
+        )}
       </div>
       
+      {/* Sección 6: Relaciones Personales */}
+      <div className="rounded-lg border border-gray-200 p-6 dark:border-gray-800">
+        <h3 className="mb-4 text-lg font-semibold">Relaciones Personales</h3>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <div>
+            <Label>Relacion con compañeros <span className="text-error-500">*</span></Label>
+            <Select
+              options={[
+                { value: "excelente", label: "Excelente" },
+                { value: "buena", label: "Buena" },
+                { value: "regular", label: "Regular" },
+                { value: "mala", label: "Mala" }
+              ]}
+              onChange={(value) => setValue("relacionCompa", value as "excelente" | "buena" | "regular" | "mala")}
+              placeholder="Seleccione su relación con compañeros"
+            />
+            {errors.relacionCompa && (
+              <p className="mt-1 text-sm text-error-500">{errors.relacionCompa.message}</p>
+            )}
+          </div>
+          <div>
+            <Label>Integración en UMET <span className="text-error-500">*</span></Label>
+            <Select
+              options={[
+                { value: "si", label: "Si" }, 
+                { value: "no", label: "No" }
+              ]}
+              onChange={(value) => setValue("integracionUmet", value as "si" | "no")}
+              placeholder="Seleccione su integración en UMET"
+            />
+            {errors.integracionUmet && (
+              <p className="mt-1 text-sm text-error-500">{errors.integracionUmet.message}</p>
+            )}
+          </div>
+          <div>
+            <Label>Relacion con el docente <span className="text-error-500">*</span></Label>
+            <Select
+              options={[
+                { value: "excelente", label: "Excelente" },
+                { value: "buena", label: "Buena" },
+                { value: "regular", label: "Regular" },
+                { value: "mala", label: "Mala" }
+              ]}
+              onChange={(value) => setValue("relacionDocente", value as "excelente" | "buena" | "regular" | "mala")}
+              placeholder="Seleccione su relación con el docente"
+            />
+            {errors.relacionDocente && (
+              <p className="mt-1 text-sm text-error-500">{errors.relacionDocente.message}</p>
+            )}
+          </div>
+          <div>
+            <Label>Relacion con los padres <span className="text-error-500">*</span></Label>
+            <Select
+              options={[
+                { value: "excelente", label: "Excelente" },
+                { value: "buena", label: "Buena" },
+                { value: "regular", label: "Regular" },
+                { value: "mala", label: "Mala" }
+              ]}
+              onChange={(value) => setValue("relacionPadres", value as "excelente" | "buena" | "regular" | "mala")}
+              placeholder="Seleccione su relación con los padres"
+            />
+            {errors.relacionPadres && (
+              <p className="mt-1 text-sm text-error-500">{errors.relacionPadres.message}</p>
+            )}
+          </div>
+          {estadoCivil === "casado" && (
+            <div>
+              <Label>Relacion con la pareja <span className="text-error-500">*</span></Label>
+              <Select
+                options={[
+                { value: "excelente", label: "Excelente" },
+                { value: "buena", label: "Buena" },
+                { value: "regular", label: "Regular" },
+                { value: "mala", label: "Mala" }
+              ]}
+              onChange={(value) => setValue("relacionPareja", value as "excelente" | "buena" | "regular" | "mala")}
+                placeholder="Seleccione su relación con la pareja"
+              />
+              {errors.relacionPareja && (
+                <p className="mt-1 text-sm text-error-500">{errors.relacionPareja.message}</p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+      {/* Sección 7: Familia */}
+      <div className="rounded-lg border border-gray-200 p-6 dark:border-gray-800">
+        <h3 className="mb-4 text-lg font-semibold">Familia</h3>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+          {/* Estado Familiar */}
+          <div className="col-span-1 sm:col-span-2">
+            <Label>
+              Estado Familiar <span className="text-error-500">*</span>
+            </Label>
+            <Select
+              options={[
+                { value: 'cabezaHogar', label: 'Cabeza de hogar' },
+                { value: 'vivePadres', label: 'Vive con sus padres' },
+                { value: 'independiente', label: 'Independiente' },
+              ]}
+              onChange={(value) => {
+                setValue('estadoFamiliar', value as 'cabezaHogar' | 'vivePadres' | 'independiente', { shouldValidate: true });
+                if (value === 'independiente') {
+                  setValue('miembros', [], { shouldValidate: true });
+                }
+              }}
+              placeholder="Seleccione su estado familiar"
+            />
+            {errors.estadoFamiliar && (
+              <p className="mt-1 text-sm text-error-500">{errors.estadoFamiliar.message}</p>
+            )}
+          </div>
+          {/* Miembros (condicional para cabezaHogar o vivePadres) */}
+          {(estadoFamiliar === 'cabezaHogar' || estadoFamiliar === 'vivePadres') && (
+            <div className="col-span-1 sm:col-span-2">
+              <h4 className="mb-4 text-lg font-semibold">
+                {estadoFamiliar === 'cabezaHogar' ? 'Miembros de la familia' : 'Miembros del hogar'}
+              </h4>
+              {fields.map((field, index) => (
+                <div key={field.id} className="mb-4 rounded-md border border-gray-300 p-4">
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    {/* Parentesco */}
+                    <div>
+                      <Label>
+                        Parentesco <span className="text-error-500">*</span>
+                      </Label>
+                      <Select
+                        options={[
+                          { value: 'conyuge', label: 'Cónyuge' },
+                          { value: 'hijo', label: 'Hijo/a' },
+                          { value: 'padreMadre', label: 'Padre/Madre' },
+                          { value: 'hermano', label: 'Hermano/a' },
+                          { value: 'otro', label: 'Otro' },
+                        ]}
+                        onChange={(value) => setValue(`miembros.${index}.parentesco`, value as 'conyuge' | 'hijo' | 'padreMadre' | 'hermano' | 'otro')}
+                        placeholder="Seleccione el parentesco"
+                      />
+                      {errors.miembros?.[index]?.parentesco && (
+                        <p className="mt-1 text-sm text-error-500">
+                          {errors.miembros?.[index]?.parentesco?.message}
+                        </p>
+                      )}
+                    </div>
+                    {/* Edad */}
+                    <div>
+                      <Label>
+                        Edad <span className="text-error-500">*</span>
+                      </Label>
+                      <Input
+                        type="number"
+                        step={1}
+                        register={register(`miembros.${index}.edad`, {
+                          valueAsNumber: true,
+                        })}
+                        error={!!errors.miembros?.[index]?.edad}
+                        hint={errors.miembros?.[index]?.edad?.message}
+                      />
+                    </div>
+
+                    {/* Sueldo */}
+                    <div>
+                      <Label>
+                        Sueldo <span className="text-error-500">*</span>
+                      </Label>
+                      <Input
+                        type="number"
+                        step={0.01}
+                        register={register(`miembros.${index}.sueldo`, {
+                          valueAsNumber: true,
+                        })}
+                        error={!!errors.miembros?.[index]?.sueldo}
+                        hint={errors.miembros?.[index]?.sueldo?.message}
+                      />
+                    </div>
+
+                    {/* Ocupación */}
+                    <div>
+                      <Label>Ocupación</Label>
+                      <Input
+                        register={register(`miembros.${index}.ocupacion`)}
+                        error={!!errors.miembros?.[index]?.ocupacion}
+                        hint={errors.miembros?.[index]?.ocupacion?.message}
+                      />
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="mt-4 rounded-md bg-error-500 px-4 py-2 text-white hover:bg-error-600"
+                    onClick={() => remove(index)}
+                  >
+                    Eliminar miembro
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                className="mt-4 rounded-md bg-indigo-500 px-4 py-2 text-white hover:bg-indigo-600"
+                onClick={() => append({ sueldo: 0, edad: 0, parentesco: 'otro', ocupacion: '' })}
+              >
+                Agregar miembro
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+
+
+
 
       {/* Sección 4: Documentos */}
       {/* <div className="rounded-lg border border-gray-200 p-6 dark:border-gray-800">

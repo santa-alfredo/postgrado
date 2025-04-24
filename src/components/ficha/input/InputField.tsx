@@ -1,4 +1,3 @@
-import type React from "react";
 import type { FC } from "react";
 import type { UseFormRegisterReturn } from "react-hook-form";
 
