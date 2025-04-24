@@ -21,6 +21,7 @@ interface InputProps {
   required?: boolean;
   // Propiedades de react-hook-form
   register?: UseFormRegisterReturn;
+  readOnly?: boolean;
 }
 
 const Input: FC<InputProps> = ({
@@ -41,6 +42,7 @@ const Input: FC<InputProps> = ({
   hint,
   register,
   required = false,
+  readOnly = false,
 }) => {
   let inputClasses = ` h-11 w-full rounded-lg border appearance-none px-4 py-2.5 text-sm shadow-theme-xs placeholder:text-gray-400 focus:outline-hidden focus:ring-3  dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 ${className}`;
 
@@ -70,6 +72,7 @@ const Input: FC<InputProps> = ({
         className={inputClasses}
         {...register}
         required={required}
+        readOnly={readOnly}
       />
 
       {(hint || errorSuggestions) && (
