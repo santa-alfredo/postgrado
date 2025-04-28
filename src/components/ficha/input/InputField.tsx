@@ -37,7 +37,6 @@ const Input: FC<InputProps> = ({
   disabled = false,
   success = false,
   error = false,
-  errorSuggestions,
   hint,
   register,
   required = false,
@@ -74,17 +73,17 @@ const Input: FC<InputProps> = ({
         readOnly={readOnly}
       />
 
-      {(hint || errorSuggestions) && (
+      {hint && (
         <p
           className={`mt-1.5 text-xs ${
-            error || errorSuggestions
+            error 
               ? "text-error-500"
               : success
               ? "text-success-500"
               : "text-gray-500"
           }`}
         >
-          {hint || errorSuggestions}
+          {hint}
         </p>
       )}
     </div>

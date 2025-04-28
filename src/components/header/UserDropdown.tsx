@@ -29,7 +29,7 @@ export default function UserDropdown() {
           <img src="images/user/owner.jpg" alt="User" />
         </span>
 
-        <span className="block mr-1 font-medium text-theme-sm">{user?.name || 'Usuario'}</span>
+        <span className="block mr-1 font-medium text-theme-sm">{user?.username || 'Usuario'}</span>
         <ChevronDownIcon className={`stroke-gray-500 dark:stroke-gray-400 transition-transform duration-200 ${
           isOpen ? "rotate-180" : ""
         }`} />
@@ -41,7 +41,7 @@ export default function UserDropdown() {
         }`}
       >
         <div className="px-4 py-2 border-b border-gray-200">
-          <p className="text-sm font-medium text-gray-700">{user?.name || 'Usuario'}</p>
+          <p className="text-sm font-medium text-gray-700">{user?.username || 'Usuario'}</p>
           <p className="text-xs text-gray-500">{user?.email || 'usuario@example.com'}</p>
         </div>
         <button

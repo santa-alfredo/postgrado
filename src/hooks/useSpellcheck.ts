@@ -5,10 +5,14 @@ interface SpellCheckResult {
   suggestions: string;
 }
 
-export function useSpellcheck() {
-  const [suggestions, setSuggestions] = useState<string>("");
+interface SuggestionsState {
+  [field: string]: string;
+}
 
-  async function checkSpelling(text: string): Promise<SpellCheckResult> {
+export function useSpellcheck() {
+  const [suggestions, setSuggestions] = useState<SuggestionsState>({});
+
+  async function checkSpelling(key: string, text: string): Promise<SpellCheckResult> {
     const response = await fetch("https://api.languagetool.org/v2/check", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -36,15 +40,16 @@ export function useSpellcheck() {
 
     const result: SpellCheckResult = {
       correctedText: corrected,
-      suggestions: corrected !== text ? `Quizás quisiste decir: ${corrected}` : ""
+      suggestions: corrected !== text ? corrected : ""
     };
 
-    setSuggestions(result.suggestions);
+    setSuggestions((prevState) => ({ ...prevState, [key]: result.suggestions }));
     return result;
   }
 
   return {
     suggestions,
+    setSuggestions,
     checkSpelling
   };
 }

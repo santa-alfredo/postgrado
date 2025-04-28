@@ -1,10 +1,10 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
-const API_BASE = import.meta.env.VITE_API_BASE;
+import axiosInstance from '../services/axiosInstance';
 
 
 interface User {
-  name: string;
+  username: string;
   email: string;
 }
 
@@ -27,16 +27,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const setTokenFromUrl = async (token: string) => {
     try {
-      const response = await fetch(`${API_BASE}/auth/set-token`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token }),
-      });
+      console.log('Estableciendo token desde URL', token);
+      const response = await axiosInstance.post('/auth/set-token', { token });
 
-      if (response.ok) {
+      if (response.status === 200) {
         const url = new URL(window.location.href);
         url.searchParams.delete('token');
         window.history.replaceState({}, '', url.toString());
@@ -55,23 +49,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const verifyToken = async () => {
     try {
-      const response = await fetch(`${API_BASE}/auth/me`, {
-        credentials: 'include',
-      });
+      const response = await axiosInstance.get('/auth/me');
       
-      if (response.ok) {
-        const data = await response.json();
+      if (response.status === 200) {
+        const data = response.data;
         setIsAuthenticated(true);
         setUser(data.user);
       } else {
         setIsAuthenticated(false);
         setUser(null);
       }
-    } catch (error) {
-      console.error('Error al verificar token:', error);
-      setIsAuthenticated(false);
-      setUser(null);
-      navigate('/signin');
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        console.log('Token inválido o no existe, redirigiendo a /signin en verifytokenen');
+        // JWT inválido o no existe, redirige a /signin
+        setIsAuthenticated(false);
+        setUser(null);
+        navigate('/signin');
+      } else {
+        // Otros errores (por ejemplo, problemas de red, 500, etc.)
+        console.error('Error al verificar token:', error);
+        setIsAuthenticated(false);
+        setUser(null);
+        // Opcional: no redirigir para otros errores, o manejar de otra forma
+      }
     } finally {
       setIsLoading(false);
     }
@@ -80,20 +81,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const response = await fetch(`${API_BASE}/auth/login`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await axiosInstance.post('/auth/login', { email, password });
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log(data);
+      if (response.status === 200) {
+        const data = response.data;
         setIsAuthenticated(true);
-        console.log(data.user);
         setUser(data.user);
         // navigate('/ficha');
       } else {
@@ -109,10 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      await fetch(`${API_BASE}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-      });
+      await axiosInstance.post('/auth/logout');
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
     } finally {
@@ -131,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else {
       verifyToken();
     }
-  }, [location]);
+  }, []);
 
   return (
     <AuthContext.Provider
