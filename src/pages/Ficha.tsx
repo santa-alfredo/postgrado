@@ -82,7 +82,7 @@ export default function Ficha() {
           throw new Error("No se pudo obtener la ficha");
         }
 
-        const data = response.data;
+        const data = response.data as { ficha: { id: string }, periodo: boolean };
         console.log('data', data);
         if (data?.ficha) {
           console.log('data.ficha', data.ficha);

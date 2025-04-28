@@ -227,6 +227,13 @@ type Props = {
   defaultData?: FormData;
 };
 
+interface ClienteData {
+  cllc_nmb: string;
+  cllc_ruc: string;
+  cllc_celular: string;
+  cllc_email: string;
+}
+
 export default function FormSocioeconomico({ onSuccess }: Props) {
   const {
     register,
@@ -280,8 +287,7 @@ export default function FormSocioeconomico({ onSuccess }: Props) {
     try {
       const response = await axiosInstance.post(`/ficha/ficha-socioeconomica`, data);
 
-      const result = response.data;
-      console.log("Respuesta del servidor:", result);
+      const result = response.data as { ficha: { id: string } };
       onSuccess(result.ficha);
     } catch (error: any) {
       if (error.response) {
@@ -393,11 +399,12 @@ export default function FormSocioeconomico({ onSuccess }: Props) {
         if (response.status !== 200) throw new Error("Error al obtener datos del usuario");
 
         const userData = response.data;
+        const { cllc_nmb, cllc_ruc, cllc_celular, cllc_email } = userData.data as ClienteData;
         // Rellenar los valores del formulario
-        setValue("nombres", userData.data.cllc_nmb);
-        setValue("cedula", userData.data.cllc_ruc);
-        setValue("telefono", userData.data.cllc_celular);
-        setValue("email", userData.data.cllc_email);
+        setValue("nombres", cllc_nmb);
+        setValue("cedula", cllc_ruc);
+        setValue("telefono", cllc_celular);
+        setValue("email", cllc_email);
       } catch (error) {
         console.error("Error cargando datos del usuario:", error);
       }

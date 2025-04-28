@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await axiosInstance.get('/auth/me');
       
       if (response.status === 200) {
-        const data = response.data;
+        const data = response.data as { user: User };
         setIsAuthenticated(true);
         setUser(data.user);
       } else {
@@ -84,7 +84,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await axiosInstance.post('/auth/login', { email, password });
 
       if (response.status === 200) {
-        const data = response.data;
+        const data = response.data as { user: User };
         setIsAuthenticated(true);
         setUser(data.user);
         // navigate('/ficha');
