@@ -394,10 +394,10 @@ export default function FormSocioeconomico({ onSuccess }: Props) {
 
         const userData = response.data;
         // Rellenar los valores del formulario
-        setValue("nombres", userData.cllc_nmb);
-        setValue("cedula", userData.cllc_ruc);
-        setValue("telefono", userData.cllc_celular);
-        setValue("email", userData.cllc_email);
+        setValue("nombres", userData.data.cllc_nmb);
+        setValue("cedula", userData.data.cllc_ruc);
+        setValue("telefono", userData.data.cllc_celular);
+        setValue("email", userData.data.cllc_email);
       } catch (error) {
         console.error("Error cargando datos del usuario:", error);
       }
@@ -825,7 +825,7 @@ export default function FormSocioeconomico({ onSuccess }: Props) {
                 <Input
                   type="number"
                   step={0.01}
-                  register={register("laboral.sueldo")}
+                  register={register("laboral.sueldo", { valueAsNumber: true })}
                   error={!!(errors.laboral as any)?.sueldo}
                   hint={(errors.laboral as any)?.sueldo?.message}
                 />
