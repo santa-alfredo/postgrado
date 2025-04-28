@@ -228,10 +228,16 @@ type Props = {
 };
 
 interface ClienteData {
-  cllc_nmb: string;
+  cllc_cdg: string; // O el tipo correcto de acuerdo con tu base de datos
   cllc_ruc: string;
-  cllc_celular: string;
+  cllc_nmb: string;
   cllc_email: string;
+  cllc_celular: string;
+}
+
+interface ClienteResponse {
+  message: string;
+  data: ClienteData | null;
 }
 
 export default function FormSocioeconomico({ onSuccess }: Props) {
@@ -395,16 +401,18 @@ export default function FormSocioeconomico({ onSuccess }: Props) {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await axiosInstance.get(`/cliente/me`);
+        const response = await axiosInstance.get<ClienteResponse>(`/cliente/me`);
         if (response.status !== 200) throw new Error("Error al obtener datos del usuario");
 
         const userData = response.data;
-        const { cllc_nmb, cllc_ruc, cllc_celular, cllc_email } = userData.data as ClienteData;
-        // Rellenar los valores del formulario
-        setValue("nombres", cllc_nmb);
-        setValue("cedula", cllc_ruc);
-        setValue("telefono", cllc_celular);
-        setValue("email", cllc_email);
+        if (userData.data) {
+          const { cllc_nmb, cllc_ruc, cllc_celular, cllc_email } = userData.data;
+          // Rellenar los valores del formulario
+          setValue("nombres", cllc_nmb);
+          setValue("cedula", cllc_ruc);
+          setValue("telefono", cllc_celular);
+          setValue("email", cllc_email);
+        }
       } catch (error) {
         console.error("Error cargando datos del usuario:", error);
       }
