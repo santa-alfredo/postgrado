@@ -55,11 +55,13 @@ const formSchema = z.object({
   estadoCivil: z.string()
     .min(1, "El estado civil es requerido"),
   telefono: z.string()
-    .min(10, "El teléfono debe tener al menos 10 dígitos")
-    .max(15, "El teléfono no puede exceder 15 dígitos")
-    .regex(/^[\d\s()-]+$/, "El teléfono solo puede contener números, espacios, guiones y paréntesis"),
+    .regex(/^\d{10}$/, "El teléfono debe tener exactamente 10 dígitos numéricos"),
   email: z.string()
     .email("Debe ser un correo electrónico válido"),
+  nacionalidad: z.string()
+    .min(1, "La nacionalidad es requerida"),
+  etnia: z.enum(["mestizo", "indigena", "blanco", "afroecuatoriano", "montubio", "mulato", "negro", "otro", "ninguno"], { required_error: "La etnia es requerida" }),
+  indigenaNacionalidad: z.number(),
 
   cambioResidencia: z.boolean().optional(),
   direccion: z.string()
@@ -94,9 +96,14 @@ const formSchema = z.object({
     carrera: z.string()
       .min(2, "La carrera debe tener al menos 2 caracteres")
       .max(100, "La carrera no puede exceder 100 caracteres"),
+    razon: z.string()
+      .min(2, "La razón debe tener al menos 2 caracteres")
+      .max(100, "La razón no puede exceder 100 caracteres"),
   }).optional(),
 
   beca: z.boolean().optional(),
+  internet: z.boolean().optional(),
+  computadora: z.boolean().optional(),
 
   // Información Económica
   ingresosFamiliares: z.string()
@@ -166,6 +173,10 @@ const formSchema = z.object({
           .min(2, 'La descripción debe tener al menos 2 caracteres')
           .max(100, 'La descripción no puede exceder 100 caracteres'),
       }),
+      z.object({
+        tipo: z.literal('desempleado'),
+        dependiente: z.enum(["padre", "madre", "hermano", "otro"], { required_error: "El dependiente es requerido" }),
+      }),
     ]
   ).optional(),
 
@@ -177,7 +188,7 @@ const formSchema = z.object({
   relacionPareja: z.enum(["excelente", "buena", "regular", "mala"], { required_error: "La relación con la pareja es requerida" }).optional(),
 
   // Familia
-  estadoFamiliar: z.enum(["cabezaHogar", "vivePadres", "independiente"], { required_error: "El estado familiar es requerido" }),
+  estadoFamiliar: z.enum(["cabezaHogar", "vivePadres", "independiente", "otro"], { required_error: "El estado familiar es requerido" }),
   miembros: z
     .array(
       z.object({
@@ -187,9 +198,8 @@ const formSchema = z.object({
         edad: z.number()
           .min(1, "La edad es requerida")
           .max(100, "La edad no puede exceder 100 años"),
-        parentesco: z.enum(["hijo", "padreMadre", "hermano", "conyuge", "otro"], { required_error: "El parentesco es requerido" }),
-        ocupacion: z.string()
-          .optional(),
+        parentesco: z.enum(["hijo", "padre", "madre", "hermano", "conyuge", "otro"], { required_error: "El parentesco es requerido" }),
+        ocupacion: z.enum(["primaria", "secundaria", "bachillerato", "universidad", "otro"], { required_error: "La instrucción académica es requerida" }),
       })
     )
     .optional(),
@@ -214,6 +224,43 @@ const formSchema = z.object({
 })
 
 type FormData = z.infer<typeof formSchema>;
+
+const nacionalidadesIndigenas = [
+  { value: 1, label: "Tsáchila" },
+  { value: 2, label: "Waorani" },
+  { value: 3, label: "Zápara" },
+  { value: 4, label: "Andoa" },
+  { value: 5, label: "Kichwa" },
+  { value: 6, label: "Pastos" },
+  { value: 7, label: "Natabuela" },
+  { value: 8, label: "Otavalo" },
+  { value: 9, label: "Karanki" },
+  { value: 10, label: "Kayambi" },
+  { value: 11, label: "Kitukara" },
+  { value: 12, label: "Panzaleo" },
+  { value: 13, label: "Chibuleo" },
+  { value: 14, label: "Salasaka" },
+  { value: 15, label: "Kisapincha" },
+  { value: 16, label: "Tomabela" },
+  { value: 17, label: "Waranka" },
+  { value: 18, label: "Puruha" },
+  { value: 19, label: "Kañari" },
+  { value: 20, label: "Saraguro" },
+  { value: 21, label: "Paltas" },
+  { value: 22, label: "Manta" },
+  { value: 23, label: "Huancavilca" },
+  { value: 24, label: "Achuar" },
+  { value: 25, label: "Awá" },
+  { value: 26, label: "Al Cofán" },
+  { value: 27, label: "Chachi" },
+  { value: 28, label: "Épera" },
+  { value: 29, label: "Huaorani" },
+  { value: 30, label: "Secoya" },
+  { value: 31, label: "Shuar" },
+  { value: 32, label: "Siona" },
+  { value: 33, label: "Shiwiar" },
+  { value: 34, label: "No Registra" },
+];
 
 interface Ubicacion {
   id: string;
@@ -271,6 +318,8 @@ export default function FormSocioeconomico({ onSuccess }: Props) {
       otraUniversidad: undefined,
       discapacidad: undefined,
       enfermedadCronica: undefined,
+      etnia: "mestizo",
+      nacionalidad: "ecuatoriano",
     }
   });
 
@@ -280,6 +329,8 @@ export default function FormSocioeconomico({ onSuccess }: Props) {
   const situacionLaboral = useWatch({ control, name: 'situacionLaboral' });
   const estadoCivil = useWatch({ control, name: 'estadoCivil' });
   const estadoFamiliar = useWatch({ control, name: 'estadoFamiliar' });
+  const etniaSeleccionada  = useWatch({ control, name: 'etnia' });
+
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'miembros',
@@ -394,7 +445,7 @@ export default function FormSocioeconomico({ onSuccess }: Props) {
       setValue('otraUniversidad', undefined, { shouldValidate: true });
     } else {
       // Si estudió en otra universidad, se inicializan los campos
-      setValue('otraUniversidad', { nombre: '', carrera: '' }, { shouldValidate: true });
+      setValue('otraUniversidad', { nombre: '', carrera: '', razon: '' }, { shouldValidate: true });
     }
   };
 
@@ -503,6 +554,58 @@ export default function FormSocioeconomico({ onSuccess }: Props) {
               hint={errors.email?.message}
             />
           </div>
+          <div>
+            <Label>Nacionalidad <span className="text-error-500">*</span></Label>
+            <Select
+              options={[
+                { value: "ecuatoriano", label: "Ecuatoriano/a" },
+                { value: "venezolano", label: "Venezolano/a" },
+                { value: "colombiano", label: "Colombiano/a" },
+                { value: "extranjero", label: "Extranjero/a" }
+              ]}
+              onChange={(value) => setValue("nacionalidad", value)}
+              placeholder="Seleccione su nacionalidad"
+              defaultValue="ecuatoriano"
+            />
+            {errors.nacionalidad && (
+              <p className="mt-1 text-sm text-error-500">{errors.nacionalidad.message}</p>
+            )}
+          </div>
+          <div>
+            <Label>Reconocimiento etnico <span className="text-error-500">*</span></Label>
+            <Select
+              options={[
+                { value: "mestizo", label: "Mestizo" },
+                { value: "indigena", label: "Indígena" },
+                { value: "blanco", label: "Blanco" },
+                { value: "afroecuatoriano", label: "Afroecuatoriano/a" },
+                { value: "montubio", label: "Montubio" },
+                { value: "mulato", label: "Mulatto" },
+                { value: "negro", label: "Negro" },
+                { value: "otro", label: "Otro" },
+                { value: "ninguno", label: "No Registra" },
+              ]}
+              onChange={(value) => setValue("etnia", value as "mestizo" | "indigena" | "blanco" | "afroecuatoriano" | "montubio" | "mulato" | "negro" | "otro" | "ninguno")}
+              placeholder="Seleccione su etnia"
+              defaultValue="mestizo"
+            />
+            {errors.etnia && (
+              <p className="mt-1 text-sm text-error-500">{errors.etnia.message}</p>
+            )}
+          </div>
+          {etniaSeleccionada === "indigena" && (
+            <div>
+              <Label>Nacionalidad Indígena <span className="text-error-500">*</span></Label>
+              <Select
+                options={nacionalidadesIndigenas.map(nacionalidad => ({ value: nacionalidad.value.toString(), label: nacionalidad.label }))}
+                onChange={(value) => setValue("indigenaNacionalidad", parseInt(value))}
+                placeholder="Seleccione su nacionalidad indigena"
+              />
+              {errors.indigenaNacionalidad && (
+                <p className="mt-1 text-sm text-error-500">{errors.indigenaNacionalidad.message}</p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -609,7 +712,7 @@ export default function FormSocioeconomico({ onSuccess }: Props) {
           {/* ¿Estudio en otra Universidad? */}
           <div className="col-span-1 sm:col-span-2">
             <label htmlFor="estudioOtraUniversidad" className="text-lg font-semibold">
-              ¿Estudio en otra Universidad?
+              ¿Estudio en otra Universidad su carrera?
               <input
                 type="checkbox" id="estudioOtraUniversidad"
                 {...register("estudioOtraUniversidad")}
@@ -619,7 +722,7 @@ export default function FormSocioeconomico({ onSuccess }: Props) {
           </div>
           {estudioOtraUniversidad && (
             <div className="col-span-1 sm:col-span-2">
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
                 <div>
                   <Label>Nombre de la universidad <span className="text-error-500">*</span></Label>
                   <Input
@@ -634,6 +737,14 @@ export default function FormSocioeconomico({ onSuccess }: Props) {
                     register={register("otraUniversidad.carrera")}
                     error={!!errors.otraUniversidad?.carrera}
                     hint={errors.otraUniversidad?.carrera?.message}
+                  />
+                </div>
+                <div>
+                  <Label>Razon del cambio de universidad <span className="text-error-500">*</span></Label>
+                  <Input
+                    register={register("otraUniversidad.razon")}
+                    error={!!errors.otraUniversidad?.razon}
+                    hint={errors.otraUniversidad?.razon?.message}
                   />
                 </div>
               </div>
@@ -786,6 +897,14 @@ export default function FormSocioeconomico({ onSuccess }: Props) {
               hint={errors.otrosGastos?.message}
             />
           </div>
+          <div>
+            <Label>Tiene internet en casa? <span className="text-error-500">*</span></Label>
+            <input type="checkbox" {...register("internet")} />
+          </div>
+          <div>
+            <Label>Cuenta con una computadora/laptop en casa? <span className="text-error-500">*</span></Label>
+            <input type="checkbox" {...register("computadora")} />
+          </div>
         </div>
       </div>
       {/* Sección 5: Información Laboral */}
@@ -912,6 +1031,25 @@ export default function FormSocioeconomico({ onSuccess }: Props) {
             />
           </div>
         )}
+        {situacionLaboral === "desempleado" && (
+          <div>
+            <Label>Economicamente dependiente de <span className="text-error-500">*</span></Label>
+            <Select
+              options={[
+                { value: "padre", label: "Padre" },
+                { value: "madre", label: "Madre" },
+                { value: "hermano", label: "Hermano" },
+                { value: "otro", label: "Otro" }
+              ]}
+              onChange={(value) => {
+                setValue('laboral.tipo', 'desempleado', { shouldValidate: true });
+                setValue('laboral.dependiente', value as 'padre' | 'madre' | 'hermano' | 'otro', { shouldValidate: true });
+              }}
+              placeholder="Seleccione su situación laboral"
+            >
+            </Select>
+          </div>
+        )}
       </div>
 
       {/* Sección 6: Relaciones Personales */}
@@ -1014,9 +1152,10 @@ export default function FormSocioeconomico({ onSuccess }: Props) {
                 { value: 'cabezaHogar', label: 'Cabeza de hogar' },
                 { value: 'vivePadres', label: 'Vive con sus padres' },
                 { value: 'independiente', label: 'Independiente' },
+                { value: 'otro', label: 'Otro' },
               ]}
               onChange={(value) => {
-                setValue('estadoFamiliar', value as 'cabezaHogar' | 'vivePadres' | 'independiente', { shouldValidate: true });
+                setValue('estadoFamiliar', value as 'cabezaHogar' | 'vivePadres' | 'independiente' | 'otro', { shouldValidate: true });
                 if (value === 'independiente') {
                   setValue('miembros', [], { shouldValidate: true });
                 }
@@ -1045,11 +1184,12 @@ export default function FormSocioeconomico({ onSuccess }: Props) {
                         options={[
                           { value: 'conyuge', label: 'Cónyuge' },
                           { value: 'hijo', label: 'Hijo/a' },
-                          { value: 'padreMadre', label: 'Padre/Madre' },
+                          { value: 'padre', label: 'Padre' },
+                          { value: 'madre', label: 'Madre' },
                           { value: 'hermano', label: 'Hermano/a' },
                           { value: 'otro', label: 'Otro' },
                         ]}
-                        onChange={(value) => setValue(`miembros.${index}.parentesco`, value as 'conyuge' | 'hijo' | 'padreMadre' | 'hermano' | 'otro')}
+                        onChange={(value) => setValue(`miembros.${index}.parentesco`, value as 'conyuge' | 'hijo' | 'padre' | 'madre' | 'hermano' | 'otro')}
                         placeholder="Seleccione el parentesco"
                       />
                       {errors.miembros?.[index]?.parentesco && (
@@ -1092,12 +1232,24 @@ export default function FormSocioeconomico({ onSuccess }: Props) {
 
                     {/* Ocupación */}
                     <div>
-                      <Label>Ocupación</Label>
-                      <Input
-                        register={register(`miembros.${index}.ocupacion`)}
-                        error={!!errors.miembros?.[index]?.ocupacion}
-                        hint={errors.miembros?.[index]?.ocupacion?.message}
+                      <Label>Instrucción académica <span className="text-error-500">*</span></Label>
+                      <Select
+                        options={[
+                          { value: 'primaria', label: 'Primaria' },
+                          { value: 'secundaria', label: 'Secundaria' },
+                          { value: 'bachillerato', label: 'Bachillerato' },
+                          { value: 'universidad', label: 'Universidad' },
+                          { value: 'otro', label: 'Otro' },
+                        ]}
+                        onChange={(value) => setValue(`miembros.${index}.ocupacion`, value as 'primaria' | 'secundaria' | 'bachillerato' | 'universidad' | 'otro')}
+                        placeholder="Seleccione su instrucción académica"
                       />
+                      
+                      {errors.miembros?.[index]?.ocupacion && (
+                        <p className="mt-1 text-sm text-error-500">
+                          {errors.miembros?.[index]?.ocupacion?.message}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <button
@@ -1112,7 +1264,7 @@ export default function FormSocioeconomico({ onSuccess }: Props) {
               <button
                 type="button"
                 className="mt-4 rounded-md bg-indigo-500 px-4 py-2 text-white hover:bg-indigo-600"
-                onClick={() => append({ sueldo: 0, edad: 0, parentesco: 'otro', ocupacion: '' })}
+                onClick={() => append({ sueldo: 0, edad: 0, parentesco: 'otro', ocupacion: 'otro' })}
               >
                 Agregar miembro
               </button>
