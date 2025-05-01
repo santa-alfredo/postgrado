@@ -81,7 +81,7 @@ const AsyncSelect: React.FC<AsyncSelectProps> = ({
       }
   
       try {
-        const response = await axiosInstance.get(`/ficha/colegio/${value}`);
+        const response = await axiosInstance.get<SelectItem>(`/ficha/colegio/${value}`);
         console.log("hacer la llamada a ficha/colegio",response.data);
         const option = {
           value: String(response.data.ine_codigo),
