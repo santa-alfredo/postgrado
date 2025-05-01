@@ -16,6 +16,13 @@ interface AsyncSelectProps {
   tipo?: string;
 }
 
+interface SelectItem {
+  ine_codigo: string;
+  ine_descripcion: string;
+  tie_codigo: string;
+  tie_descripcion: string;
+}
+
 const AsyncSelect: React.FC<AsyncSelectProps> = ({
   value,
   onChange,
@@ -31,11 +38,11 @@ const AsyncSelect: React.FC<AsyncSelectProps> = ({
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const response = await axiosInstance.get(`/ficha/colegio`, {
+        const response = await axiosInstance.get<SelectItem[]>(`/ficha/colegio`, {
           params: { search, tipo },
         });
         console.log("/ficha/colegio",response.data);
-        const newOpts = response.data.map((item: any) => ({
+        const newOpts = response.data.map((item: SelectItem) => ({
           value: String(item.ine_codigo),
           label: item.ine_descripcion,
           tipoValue: String(item.tie_codigo),

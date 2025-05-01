@@ -284,6 +284,21 @@ const tipoColegioOptions = [
   { value: "8", label: "PRIVADO" },
 ];
 
+interface Provincia {
+  id: string;
+  nombre: string;
+}
+
+interface Ciudad {
+  id: string;
+  nombre: string;
+}
+
+interface Parroquia {
+  id: string;
+  nombre: string;
+}
+
 export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
   const {
     register,
@@ -467,9 +482,9 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
   //   fetchUserData();
   // }, []);
    // Cuando cambia la provincia, obtener las ciudades
-  const [provincias, setProvincias] = useState([]);
-  const [ciudadesFiltradas, setCiudadesFiltradas] = useState([]);
-  const [parroquiasFiltradas, setParroquiasFiltradas] = useState([]);
+  const [provincias, setProvincias] = useState<Provincia[]>([]);
+  const [ciudadesFiltradas, setCiudadesFiltradas] = useState<Ciudad[]>([]);
+  const [parroquiasFiltradas, setParroquiasFiltradas] = useState<Parroquia[]>([]);
 
   const provinciaId = watch("provinciaId");
   const ciudadId = watch("ciudadId");
@@ -478,7 +493,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
   useEffect(() => {
     const fetchProvincias = async () => {
       try {
-        const response = await axiosInstance.get(`/ficha/provincias`);
+        const response = await axiosInstance.get<Provincia[]>(`/ficha/provincias`);
         setProvincias(response.data);
       } catch (error) {
         console.error("Error al cargar las ciudades:", error);
@@ -492,7 +507,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
     const fetchCiudades = async () => {
       if (provinciaId) {
         try {
-          const response = await axiosInstance.get(`/ficha/ciudades?provinciaId=${provinciaId}`);
+          const response = await axiosInstance.get<Ciudad[]>(`/ficha/ciudades?provinciaId=${provinciaId}`);
           setCiudadesFiltradas(response.data);
           setParroquiasFiltradas([]); // Resetear parroquias
           setValue("ciudadId", ""); // Resetear ciudad
@@ -510,7 +525,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
     const fetchParroquias = async () => {
       if (ciudadId) {
         try {
-          const response = await axiosInstance.get(`/ficha/parroquias?ciudadId=${ciudadId}`);
+          const response = await axiosInstance.get<Parroquia[]>(`/ficha/parroquias?ciudadId=${ciudadId}`);
           setParroquiasFiltradas(response.data);
           setValue("parroquiaId", ""); // Resetear parroquia
         } catch (error) {
