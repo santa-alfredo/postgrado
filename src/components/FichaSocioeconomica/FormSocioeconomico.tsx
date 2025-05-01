@@ -167,17 +167,14 @@ const formSchema = z.object({
 
   // Familia
   estadoFamiliar: z.enum(["cabezaHogar", "vivePadres", "independiente", "otro"], { required_error: "El estado familiar es requerido" }),
+  tipoCasa: z.string().min(1, "El tipo de casa es requerido"),
   miembros: z
     .array(
       z.object({
-        sueldo: z
-          .number({ invalid_type_error: 'El sueldo debe ser un número' })
-          .min(0, 'El sueldo no puede ser negativo'),
-        edad: z.number()
-          .min(1, "La edad es requerida")
-          .max(100, "La edad no puede exceder 100 años"),
+        sueldo: z.string().min(1, "El sueldo es requerido"),
+        edad: z.string().min(1, "La edad es requerida"),
         parentesco: z.enum(["hijo", "padre", "madre", "hermano", "conyuge", "otro"], { required_error: "El parentesco es requerido" }),
-        ocupacion: z.enum(["primaria", "secundaria", "bachillerato", "universidad", "otro"], { required_error: "La instrucción académica es requerida" }),
+        ocupacion: z.string().min(1, "La Instrucción Académica es requerida"),
       })
     )
     .optional(),
@@ -564,6 +561,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             <Select
               options={[
                 { value: "SOL", label: "Soltero/a" },
+                { value: "UNL", label: "Unión Libre" },
                 { value: "CAS", label: "Casado/a" },
                 { value: "DIV", label: "Divorciado/a" },
                 { value: "VIU", label: "Viudo/a" }
@@ -595,13 +593,34 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             />
           </div>
           <div>
-            <Label>Nacionalidad <span className="text-error-500">*</span></Label>
+            <Label>Pais de Origen <span className="text-error-500">*</span></Label>
             <Select
               options={[
-                { value: "ecuatoriano", label: "Ecuatoriano/a" },
-                { value: "venezolano", label: "Venezolano/a" },
-                { value: "colombiano", label: "Colombiano/a" },
-                { value: "extranjero", label: "Extranjero/a" }
+                { value: "593", label: "ECUADOR" },
+                { value: "58", label: "VENEZUELA" },
+                { value: "57", label: "COLOMBIA" },
+                { value: "53", label: "CUBA" },
+                { value: "1", label: "ESTADOS UNIDOS" },
+                { value: "34", label: "ESPAÑA" },
+                { value: "51", label: "PERU" },
+                { value: "52", label: "MEXICO" },
+                { value: "39", label: "ITALIA" },
+                { value: "504", label: "HONDURAS" },
+                { value: "506", label: "COSTA RICA" },
+                { value: "507", label: "PANAMA" },
+                { value: "509", label: "HAITÍ" },
+                { value: "54", label: "ARGENTINA" },
+                { value: "55", label: "BRASIL" },
+                { value: "56", label: "CHILE" },
+                { value: "591", label: "BOLIVIA" },
+                { value: "809", label: "REPUBLICA DOMINICANA" },
+                { value: "973", label: "BANRAIN" },
+                { value: "41", label: "SUIZA" },
+                { value: "43", label: "AUSTRIA" },
+                { value: "49", label: "ALEMANIA" },
+                { value: "514", label: "CANADA" },
+                { value: "82", label: "COREA" },
+                { value: "380", label: "UKRANIA" },
               ]}
               onChange={(value) => setValue("nacionalidad", value)}
               placeholder="Seleccione su nacionalidad"
@@ -1097,7 +1116,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
                 { value: "padre", label: "Padre" },
                 { value: "madre", label: "Madre" },
                 { value: "hermano", label: "Hermano" },
-                { value: "otro", label: "Otro" }
+                { value: "otro", label: "Otro Familiar" }
               ]}
               onChange={(value) => {
                 setValue('laboral.tipo', 'desempleado', { shouldValidate: true });
@@ -1176,7 +1195,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
               <p className="mt-1 text-sm text-error-500">{errors.relacionPadres.message}</p>
             )}
           </div>
-          {estadoCivil === "casado" && (
+          {(estadoCivil === "CAS" || estadoCivil === "UNL") && (
             <div>
               <Label>Relacion con la pareja <span className="text-error-500">*</span></Label>
               <Select
@@ -1201,16 +1220,32 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
         <h3 className="mb-4 text-lg font-semibold">Familia</h3>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           {/* Estado Familiar */}
-          <div className="col-span-1 sm:col-span-2">
-            <Label>
-              Estado Familiar <span className="text-error-500">*</span>
-            </Label>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div>
+              <Label>
+                Su casa es <span className="text-error-500">*</span>
+              </Label>
+              <Select
+                options={[
+                  { value: 'propia', label: 'Propia con servicios basicos' },
+                  { value: 'arrendada', label: 'Arrendada' },
+                  { value: 'familiar', label: 'De un familiar' },
+                  { value: 'prestada', label: 'Prestada' },
+                ]}
+                onChange={(value) => setValue('tipoCasa', value as 'propia' | 'arrendada' | 'familiar' | 'prestada', { shouldValidate: true })}
+                placeholder="Seleccione su tipo de casa"
+              />
+            </div>
+            <div>
+              <Label>
+                Estado Familiar <span className="text-error-500">*</span>
+              </Label>
             <Select
               options={[
                 { value: 'cabezaHogar', label: 'Cabeza de hogar' },
                 { value: 'vivePadres', label: 'Vive con sus padres' },
                 { value: 'independiente', label: 'Independiente' },
-                { value: 'otro', label: 'Otro' },
+                { value: 'otro', label: 'Otro Familiar' },
               ]}
               onChange={(value) => {
                 setValue('estadoFamiliar', value as 'cabezaHogar' | 'vivePadres' | 'independiente' | 'otro', { shouldValidate: true });
@@ -1223,6 +1258,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             {errors.estadoFamiliar && (
               <p className="mt-1 text-sm text-error-500">{errors.estadoFamiliar.message}</p>
             )}
+            </div>
           </div>
           {/* Miembros (condicional para cabezaHogar o vivePadres) */}
           {(estadoFamiliar === 'cabezaHogar' || estadoFamiliar === 'vivePadres') && (
@@ -1261,15 +1297,27 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
                       <Label>
                         Edad <span className="text-error-500">*</span>
                       </Label>
-                      <Input
-                        type="number"
-                        step={1}
-                        register={register(`miembros.${index}.edad`, {
-                          valueAsNumber: true,
-                        })}
-                        error={!!errors.miembros?.[index]?.edad}
-                        hint={errors.miembros?.[index]?.edad?.message}
-                      />
+                      <select
+                        {...register(`miembros.${index}.edad`)}
+                        className={`w-full rounded-md border px-3 py-2 ${
+                          errors.miembros?.[index]?.edad ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      >
+                        <option value="">Seleccione una edad</option>
+                        <option value="<5>">0 - 5 años</option>
+                        <option value="<12">6 - 12 años</option>
+                        <option value="<17">13 - 17 años</option>
+                        <option value="<25">18 - 25 años</option>
+                        <option value="<35">26 - 35 años</option>
+                        <option value="<45">36 - 45 años</option>
+                        <option value="<60">46 - 60 años</option>
+                        <option value=">60">Más de 60 años</option>
+                      </select>
+                      {errors.miembros?.[index]?.edad && (
+                        <p className="text-error-500 text-sm mt-1">
+                          {errors.miembros?.[index]?.edad?.message}
+                        </p>
+                      )}
                     </div>
 
                     {/* Sueldo */}
@@ -1277,15 +1325,24 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
                       <Label>
                         Sueldo <span className="text-error-500">*</span>
                       </Label>
-                      <Input
-                        type="number"
-                        step={0.01}
-                        register={register(`miembros.${index}.sueldo`, {
-                          valueAsNumber: true,
-                        })}
-                        error={!!errors.miembros?.[index]?.sueldo}
-                        hint={errors.miembros?.[index]?.sueldo?.message}
-                      />
+                      <select
+                        {...register(`miembros.${index}.sueldo`)}
+                        className={`w-full rounded-md border px-3 py-2 ${
+                          errors.miembros?.[index]?.sueldo ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      >
+                        <option value="">Seleccione un rango</option>
+                        <option value="Menos de $500">Menos de $500</option>
+                        <option value="$500 - $1000">$500 - $1000</option>
+                        <option value="$1001 - $2000">$1001 - $2000</option>
+                        <option value="$2001 - $3000">$2001 - $3000</option>
+                        <option value="Más de $3000">Más de $3000</option>
+                      </select>
+                      {errors.miembros?.[index]?.sueldo && (
+                        <p className="text-error-500 text-sm mt-1">
+                          {errors.miembros?.[index]?.sueldo?.message}
+                        </p>
+                      )}
                     </div>
 
                     {/* Ocupación */}
@@ -1293,13 +1350,24 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
                       <Label>Instrucción académica <span className="text-error-500">*</span></Label>
                       <Select
                         options={[
-                          { value: 'primaria', label: 'Primaria' },
-                          { value: 'secundaria', label: 'Secundaria' },
-                          { value: 'bachillerato', label: 'Bachillerato' },
-                          { value: 'universidad', label: 'Universidad' },
-                          { value: 'otro', label: 'Otro' },
+                          { value: '1', label: 'NINGUNO' },
+                          { value: '2', label: 'CENTRO ALFABETIZACION' },
+                          { value: '3', label: 'JARDIN INFANTES' },
+                          { value: '4', label: 'EDUCACION BASICA' },
+                          { value: '5', label: 'EDUCACION MEDIA' },
+                          { value: '6', label: 'SUPERIOR NO UNIVERSITARIA COMPLETA' },
+                          { value: '7', label: 'SUPERIOR NO UNIVERSITARIA INCOMPLETA' },
+                          { value: '8', label: 'SUPERIOR UNIVERSITARIA COMPLETA' },
+                          { value: '9', label: 'SUPERIOR UNIVERSITARIA INCOMPLETA' },
+                          { value: '10', label: 'DIPLOMADO' },
+                          { value: '11', label: 'ESPECIALIDAD' },
+                          { value: '12', label: 'POSGRADO MAESTRIA' },
+                          { value: '13', label: 'POSGRADO ESPECIALIDAD AREA SALUD' },
+                          { value: '14', label: 'POSGRADO PHD' },
+                          { value: '15', label: 'NO SABE' },
+                          { value: '16', label: 'NO REGISTRA' },
                         ]}
-                        onChange={(value) => setValue(`miembros.${index}.ocupacion`, value as 'primaria' | 'secundaria' | 'bachillerato' | 'universidad' | 'otro')}
+                        onChange={(value) => setValue(`miembros.${index}.ocupacion`, value)}
                         placeholder="Seleccione su instrucción académica"
                       />
                       
@@ -1322,7 +1390,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
               <button
                 type="button"
                 className="mt-4 rounded-md bg-indigo-500 px-4 py-2 text-white hover:bg-indigo-600"
-                onClick={() => append({ sueldo: 0, edad: 0, parentesco: 'otro', ocupacion: 'otro' })}
+                onClick={() => append({ sueldo: '', edad: '', parentesco: 'otro', ocupacion: 'otro' })}
               >
                 Agregar miembro
               </button>

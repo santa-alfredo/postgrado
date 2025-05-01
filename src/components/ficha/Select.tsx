@@ -34,6 +34,7 @@ const Select: React.FC<SelectProps> = ({
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newValue = e.target.value;
+    console.log("newValue",newValue);
     setInternalValue(newValue);
     onChange(newValue);
   };
