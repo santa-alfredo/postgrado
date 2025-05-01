@@ -4,71 +4,31 @@ import PageMeta from "../components/common/PageMeta";
 import FormSocioeconomico from "../components/FichaSocioeconomica/FormSocioeconomico";
 import axiosInstance from "../services/axiosInstance";
 import { useNavigate } from "react-router";
+import { FichaResponse, FichaSocioeconomica } from "../types/fichasocioeconomica";
 const API_BASE = import.meta.env.VITE_API_BASE;
 
-// const defaultData = {
-//   // Información Personal
-//   nombres: '',
-//   cedula: '',
-//   fechaNacimiento: '',
-//   genero: '',
-//   estadoCivil: '',
-//   telefono: '',
-//   email: '',
-//   cambioResidencia: false,
-//   direccion: '',
-//   provinciaId: '',
-//   ciudadId: '',
-//   parroquiaId: '',
-
-//   // Información Académica
-//   carrera: '',
-//   colegio: '',
-//   tipoColegio: '',
-//   anioGraduacion: 2025,
-//   semestre: '',
-//   promedio: 0,
-//   estudioOtraUniversidad: false,
-//   otraUniversidad: undefined,
-//   beca: false,
-
-//   // Información Económica
-//   ingresosFamiliares: '0.00',
-//   gastosMensuales: '0.00',
-//   vivienda: '0.00',
-//   transporte: '0.00',
-//   alimentacion: '0.00',
-//   otrosGastos: '0.00',
-
-//   // Información Laboral
-//   situacionLaboral: 'empleado',
-//   laboral: undefined,
-
-//   // Relaciones Personales
-//   relacionCompa: 'buena',
-//   integracionUmet: 'si',
-//   relacionDocente: 'buena',
-//   relacionPadres: 'buena',
-//   relacionPareja: undefined,
-
-//   // Familia
-//   estadoFamiliar: 'cabezaHogar',
-//   miembros: [],
-
-//   // Salud
-//   tieneDiscapacidad: 'no',
-//   discapacidad: undefined,
-
-//   tieneEnfermedadCronica: 'no',
-//   enfermedadCronica: undefined,
-
-//   // Documentos
-//   documentos: null,
-// };
+const defaultFicha: FichaSocioeconomica = {
+  nombres: '',
+  cedula: '',
+  fechaNacimiento: '',
+  genero: '',
+  estadoCivil: '',
+  email: '',
+  nacionalidad: '',
+  telefono: '',
+  colegio: '',
+  tipoColegio: '',
+  indigenaNacionalidad: 0,
+  beca: null,
+  carrera: {
+    id: null,
+    nombre: null,
+  },
+};
 
 export default function Ficha() {
   const navigate = useNavigate();
-  const [fichaExistente, setFichaExistente] = useState<null | { id: string }>(null);
+  const [ficha, setFicha] = useState<FichaResponse["ficha"] | null>(null);
   const [periodoValido, setPeriodoValido] = useState(false);
 
   const [loading, setLoading] = useState(true);
@@ -76,17 +36,17 @@ export default function Ficha() {
   useEffect(() => {
     const fetchFicha = async () => {
       try {
-        const response = await axiosInstance.get('/ficha/me');
+        const response = await axiosInstance.get<FichaResponse>("/ficha/me");
 
         if (response.status !== 200) {
           throw new Error("No se pudo obtener la ficha");
         }
 
-        const data = response.data as { ficha: { id: string }, periodo: boolean };
-        console.log('data', data);
+        const data = response.data;
+        console.log('fichaData', data);
         if (data?.ficha) {
           console.log('data.ficha', data.ficha);
-          setFichaExistente(data.ficha);
+          setFicha(data.ficha);
           setPeriodoValido(data.periodo);
         }
       } catch (error: any) {
@@ -116,14 +76,14 @@ export default function Ficha() {
 
         {loading ? (
           <p>Cargando...</p>
-        ) : periodoValido && fichaExistente ? (
+        ) : periodoValido && ficha ? (
           <div className="space-y-4">
             <p className="text-gray-700 dark:text-white/80">
               Ya has registrado tu ficha socioeconómica. Gracias por completar la información.
             </p>
             <a
               className="inline-block rounded-xl bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-              href={`${API_BASE}/ficha/${fichaExistente.id}/pdf`}
+              href={`${API_BASE}/ficha/${ficha.cedula}/pdf`}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -135,10 +95,11 @@ export default function Ficha() {
             <FormSocioeconomico 
               onSuccess={(data) => {
                 console.log(data, "data");
-                setFichaExistente(data);
+                setFicha(data);
                 setPeriodoValido(true);
                 setLoading(false);
               }}
+              defaultData={ficha ?? defaultFicha}
             />
           </div>
         )}
