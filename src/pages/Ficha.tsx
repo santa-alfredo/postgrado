@@ -16,16 +16,18 @@ const defaultFicha: FichaSocioeconomica = {
   email: '',
   nacionalidad: '',
   telefono: '',
-  colegio: '',
+  colegio: null,
   tipoColegio: '',
   indigenaNacionalidad: 0,
-  beca: null,
+  beca: 'N',
   carrera: {
     id: null,
     nombre: null,
   },
+  promedio: 0,
+  direccion: '',
+  etnia: 'mestizo',
 };
-
 export default function Ficha() {
   const navigate = useNavigate();
   const [ficha, setFicha] = useState<FichaResponse["ficha"] | null>(null);

@@ -9,7 +9,7 @@ import Select from "../ficha/Select";
 import { useEffect, useState } from "react";
 import axiosInstance from "../../services/axiosInstance";
 import { FichaSocioeconomica } from "../../types/fichasocioeconomica";
-import AsyncSelect from "../ficha/AsyncSelect";
+import ColegioAsyncSelect from "../ficha/AsyncSelect";
 
 
 // Esquema de validación con Zod
@@ -42,7 +42,7 @@ const formSchema = z.object({
   etnia: z.enum(["mestizo", "indigena", "blanco", "afroecuatoriano", "montubio", "mulato", "negro", "otro", "ninguno"], { required_error: "La etnia es requerida" }),
   indigenaNacionalidad: z.number(),
 
-  cambioResidencia: z.boolean().optional(),
+  cambioResidencia: z.enum(["S", "N"], { required_error: "El cambio de residencia es requerido" }),
   direccion: z.string()
     .min(10, "La dirección debe tener al menos 10 caracteres")
     .max(200, "La dirección no puede exceder 200 caracteres"),
@@ -55,11 +55,14 @@ const formSchema = z.object({
 
   // Información Académica
   carrera: z.string()
-    .min(2, "Seleccione una carrera"),
+    .min(1, "Seleccione una carrera"),
 
-  colegio: z.string()
-    .min(2, "El nombre del colegio debe tener al menos 2 caracteres")
-    .max(100, "El nombre del colegio no puede exceder 100 caracteres"),
+  colegio: z.object({
+    value: z.string(),
+    label: z.string(),
+    tipoValue: z.string().optional(),
+    tipoLabel: z.string().optional(),
+  }).nullable(),
   tipoColegio: z.string()
     .min(1, "El tipo de colegio es requerido"),
   anioGraduacion: z.number().int().min(1900, 'Año inválido').max(2025, 'Año inválido'),
@@ -81,8 +84,8 @@ const formSchema = z.object({
   }).optional(),
 
   beca: z.string().nullable().optional(),
-  internet: z.boolean().optional(),
-  computadora: z.boolean().optional(),
+  internet: z.enum(["S", "N"], { required_error: "La conexión a internet es requerida" }),
+  computadora: z.enum(["S", "N"], { required_error: "La computadora es requerida" }),
 
   // Información Económica
   ingresosFamiliares: z.string()
@@ -116,8 +119,7 @@ const formSchema = z.object({
         cargo: z.string()
           .min(2, "El cargo debe tener al menos 2 caracteres")
           .max(100, "El cargo no puede exceder 100 caracteres"),
-        sueldo: z.string()
-          .min(1, "El sueldo no puede ser negativo"),
+          sueldo: z.string().min(1, "El sueldo es requerido"),
       }),
       z.object({
         tipo: z.literal("negocio propio"),
@@ -160,7 +162,7 @@ const formSchema = z.object({
 
   // Relaciones Personales
   relacionCompa: z.enum(["excelente", "buena", "regular", "mala"], { required_error: "La relación con compañeros es requerida" }),
-  integracionUmet: z.enum(["si", "no"], { required_error: "La integración en UMET es requerida" }),
+  integracionUmet: z.enum(["S", "N"], { required_error: "La integración en UMET es requerida" }),
   relacionDocente: z.enum(["excelente", "buena", "regular", "mala"], { required_error: "La relación con el docente es requerida" }),
   relacionPadres: z.enum(["excelente", "buena", "regular", "mala"], { required_error: "La relación con los padres es requerida" }),
   relacionPareja: z.enum(["excelente", "buena", "regular", "mala"], { required_error: "La relación con la pareja es requerida" }).optional(),
@@ -180,14 +182,15 @@ const formSchema = z.object({
     .optional(),
 
     // Salud
-    tieneDiscapacidad: z.enum(["si", "no"], { required_error: "La discapacidad es requerida" }),
+    tieneDiscapacidad: z.enum(["S", "N"], { required_error: "La discapacidad es requerida" }),
     discapacidad: z.object({
       tipo: z.enum(["fisica", "psiquica", "auditiva", "visual", "intelectual", "multiple"], { required_error: "El tipo de discapacidad es requerido" }),
-      porcentaje: z.number().int().min(10, "El porcentaje de discapacidad debe ser al menos 10%").max(100, "El porcentaje de discapacidad no puede exceder 100%"),
+      porcentaje: z.number().int().min(30, "El porcentaje de discapacidad debe ser al menos 30%").max(100, "El porcentaje de discapacidad no puede exceder 100%"),
+      tieneDiagnosticoPresuntivo: z.enum(["SI", "NO"], { required_error: "El diagnóstico presuntivo es requerido" }),
       carnet: z.string().min(1, "El carnet de discapacidad es requerido"),
     }).optional(),
 
-    tieneEnfermedadCronica: z.enum(["si", "no"], { required_error: "La enfermedad crónica es requerida" }),
+    tieneEnfermedadCronica: z.enum(["S", "N"], { required_error: "La enfermedad crónica es requerida" }),
     enfermedadCronica: z.object({
       nombre: z.string().min(1, "El nombre de la enfermedad es requerido"),
       lugaresTratamiento: z.enum(["clinicaPrivada", "publica", "iess", "otro"], { required_error: "El lugar de tratamiento es requerido" }),
@@ -237,32 +240,12 @@ const nacionalidadesIndigenas = [
   { value: 34, label: "No Registra" },
 ];
 
-// interface Ubicacion {
-//   id: string;
-//   nombre: string;
-//   provinciaId?: string;
-//   ciudadId?: string;
-// }
 
 type Props = {
   onSuccess: (data: FichaSocioeconomica) => void;
   defaultData: FichaSocioeconomica;
 };
 
-// interface ClienteData {
-//   cllc_cdg: string; // O el tipo correcto de acuerdo con tu base de datos
-//   cllc_ruc: string;
-//   cllc_nmb: string;
-//   cllc_email: string;
-//   cllc_celular: string;
-//   cllc_fecha_nac: string;
-//   alu_genero: string;
-// }
-
-// interface ClienteResponse {
-//   message: string;
-//   data: ClienteData | null;
-// }
 
 const generoLabels: Record<string, string> = {
   M: "Masculino",
@@ -308,10 +291,23 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      ...defaultData,
+      nombres: defaultData.nombres || "",
+      cedula: defaultData.cedula || "",
+      fechaNacimiento: defaultData.fechaNacimiento || "",
+      genero: defaultData.genero || "",
+      estadoCivil: defaultData.estadoCivil || "",
+      email: defaultData.email || "",
+      nacionalidad: defaultData.nacionalidad || "",
+      telefono: defaultData.telefono || "",
+      colegio: defaultData.colegio ?? null,
+      tipoColegio: defaultData.tipoColegio || "",
+      indigenaNacionalidad: defaultData.indigenaNacionalidad || 0,
+      beca: defaultData.beca || "N",
       carrera: defaultData.carrera.id || "",
-      direccion: '',
-      provinciaId: '',
+      promedio: defaultData.promedio || 0,
+      direccion: defaultData.direccion || "",
+      etnia: defaultData.etnia || "mestizo",
+
       ciudadId: '',
       parroquiaId: '',
       anioGraduacion: undefined,
@@ -323,7 +319,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
       otraUniversidad: undefined,
       discapacidad: undefined,
       enfermedadCronica: undefined,
-      etnia: "mestizo",
+      cambioResidencia: 'N'
     }
   });
 
@@ -353,20 +349,26 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
     } catch (error: any) {
       if (error.response) {
         // El servidor respondió con un código diferente a 2xx
-        console.error("Error del backend:", error.response.data);
+        alert(`Error del servidor: ${error.response.data.detail || "Error desconocido"}`);
         // Aquí puedes mostrar error.response.data.detail al usuario si es un 422 de FastAPI
       } else if (error.request) {
         // La solicitud fue hecha pero no se recibió respuesta
         console.error("No se recibió respuesta del servidor:", error.request);
+        alert("No se recibió respuesta del servidor.");
       } else {
         // Ocurrió un error al configurar la solicitud
         console.error("Error al configurar la solicitud:", error.message);
+        alert("Error al configurar la solicitud: " + error.message);
       }
       // mostrar error al usuario si deseas
     }
   };
   const onError = (errors: any) => {
     console.log(errors);
+    const mensajes = Object.values(errors)
+      .map((err: any) => err.message)
+      .join("\n");
+    alert(`Errores de validación:\n${mensajes}`);
   };
 
   // Estado para las opciones filtradas
@@ -453,31 +455,6 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
     }
   };
 
-  // useEffect(() => {
-  //   const fetchUserData = async () => {
-  //     try {
-  //       const response = await axiosInstance.get<ClienteResponse>(`/cliente/me`);
-  //       if (response.status !== 200) throw new Error("Error al obtener datos del usuario");
-
-  //       const userData = response.data;
-  //       if (userData.data) {
-  //         const { cllc_nmb, cllc_ruc, cllc_celular, cllc_email, cllc_fecha_nac, alu_genero } = userData.data;
-  //         console.log('data', userData.data);
-  //         // Rellenar los valores del formulario
-  //         setValue("nombres", cllc_nmb);
-  //         setValue("cedula", cllc_ruc);
-  //         setValue("telefono", cllc_celular);
-  //         setValue("email", cllc_email);
-  //         setValue("fechaNacimiento", new Date(cllc_fecha_nac).toISOString().split('T')[0]);
-  //         setValue("genero", alu_genero);
-  //       }
-  //     } catch (error) {
-  //       console.error("Error cargando datos del usuario:", error);
-  //     }
-  //   };
-
-  //   fetchUserData();
-  // }, []);
    // Cuando cambia la provincia, obtener las ciudades
   const [provincias, setProvincias] = useState<Provincia[]>([]);
   const [ciudadesFiltradas, setCiudadesFiltradas] = useState<Ciudad[]>([]);
@@ -678,10 +655,9 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
             <Label>Colegio <span className="text-error-500">*</span></Label>
-            <AsyncSelect
-              value={watch("colegio") || ""}
-              onChange={(value) => setValue("colegio", value)}
-              tipo="publico"
+            <ColegioAsyncSelect
+              value={watch("colegio") ?? null}
+              onChange={(option) => setValue("colegio", option)}
               setTipoColegio={(tipo) => setValue("tipoColegio", tipo.value)}
             />
             {errors.colegio && (
@@ -814,7 +790,14 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
           </div>
           <div>
             <Label>Tuvo que cambiar de residencia para estudiar? <span className="text-error-500">*</span></Label>
-            <input type="checkbox" {...register("cambioResidencia")} />
+            <select {...register("cambioResidencia")} className="w-full border rounded px-3 py-2">
+              <option value="">Seleccione</option>
+              <option value="S">Sí</option>
+              <option value="N">No</option>
+            </select>
+            {errors.cambioResidencia && (
+              <p className="mt-1 text-sm text-red-500">{errors.cambioResidencia.message}</p>
+            )}
           </div>
 
           {/* Select Provincia */}
@@ -890,11 +873,9 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
               className={`w-full rounded-md border px-3 py-2 ${errors.ingresosFamiliares  ? 'border-red-500' : 'border-gray-300'}`}
             >
               <option value="">Seleccione un rango</option>
-              <option value="Menos de $100">Menos de $100</option>
-              <option value="$100 - $300">$100 - $300</option>
-              <option value="$301 - $600">$301 - $600</option>
-              <option value="$601 - $1000">$601 - $1000</option>
-              <option value="Más de $1000">Más de $1000</option>
+              <option value="1">Menos de $470</option>
+              <option value="2">$470 - $1000</option>
+              <option value="3">Más de $1000</option>
             </select>
           </div>
           <div>
@@ -969,11 +950,31 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
           </div>
           <div>
             <Label>Tiene internet en casa? <span className="text-error-500">*</span></Label>
-            <input type="checkbox" {...register("internet")} />
+            <select
+              {...register("internet")}
+              className={`w-full rounded-md border px-3 py-2 ${errors.internet ? 'border-red-500' : 'border-gray-300'}`}
+            >
+              <option value="">Seleccione una opción</option>
+              <option value="S">Sí</option>
+              <option value="N">No</option>
+            </select>
+            {errors.internet && (
+              <p className="text-error-500 text-sm mt-1">{errors.internet.message}</p>
+            )}
           </div>
           <div>
             <Label>Cuenta con una computadora/laptop en casa? <span className="text-error-500">*</span></Label>
-            <input type="checkbox" {...register("computadora")} />
+            <select
+              {...register("computadora")}
+              className={`w-full rounded-md border px-3 py-2 ${errors.computadora ? 'border-red-500' : 'border-gray-300'}`}
+            >
+              <option value="">Seleccione una opción</option>
+              <option value="S">Sí</option>
+              <option value="N">No</option>
+            </select>
+            {errors.computadora && (
+              <p className="text-error-500 text-sm mt-1">{errors.computadora.message}</p>
+            )}
           </div>
         </div>
       </div>
@@ -1031,11 +1032,9 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
                   className={`w-full rounded-md border px-3 py-2 ${!!(errors.laboral as any)?.sueldo ? 'border-red-500' : 'border-gray-300'}`}
                 >
                   <option value="">Seleccione un rango</option>
-                  <option value="Menos de $500">Menos de $500</option>
-                  <option value="$500 - $1000">$500 - $1000</option>
-                  <option value="$1001 - $2000">$1001 - $2000</option>
-                  <option value="$2001 - $3000">$2001 - $3000</option>
-                  <option value="Más de $3000">Más de $3000</option>
+                  <option value="1">Menos de $470</option>
+                  <option value="2">$470 - $1000</option>
+                  <option value="3">Más de $1000</option>
                 </select>
                 {errors.laboral && (errors.laboral as any).sueldo && (
                   <p className="text-error-500 text-sm mt-1">{(errors.laboral as any).sueldo?.message}</p>
@@ -1150,14 +1149,14 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             )}
           </div>
           <div>
-            <Label>Integración en UMET <span className="text-error-500">*</span></Label>
+            <Label> Se siente integrado en UMET <span className="text-error-500">*</span></Label>
             <Select
               options={[
-                { value: "si", label: "Si" },
-                { value: "no", label: "No" }
+                { value: "S", label: "Si" },
+                { value: "N", label: "No" }
               ]}
-              onChange={(value) => setValue("integracionUmet", value as "si" | "no")}
-              placeholder="Seleccione su integración en UMET"
+              onChange={(value) => setValue("integracionUmet", value as "S" | "N")}
+              placeholder="Seleccione si se siente integrado en UMET"
             />
             {errors.integracionUmet && (
               <p className="mt-1 text-sm text-error-500">{errors.integracionUmet.message}</p>
@@ -1304,14 +1303,14 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
                         }`}
                       >
                         <option value="">Seleccione una edad</option>
-                        <option value="<5>">0 - 5 años</option>
-                        <option value="<12">6 - 12 años</option>
-                        <option value="<17">13 - 17 años</option>
-                        <option value="<25">18 - 25 años</option>
-                        <option value="<35">26 - 35 años</option>
-                        <option value="<45">36 - 45 años</option>
-                        <option value="<60">46 - 60 años</option>
-                        <option value=">60">Más de 60 años</option>
+                        <option value="0-5">0 - 5 años</option>
+                        <option value="6-12">6 - 12 años</option>
+                        <option value="13-17">13 - 17 años</option>
+                        <option value="18-25">18 - 25 años</option>
+                        <option value="26-35">26 - 35 años</option>
+                        <option value="36-45">36 - 45 años</option>
+                        <option value="46-60">46 - 60 años</option>
+                        <option value="60+">Más de 60 años</option>
                       </select>
                       {errors.miembros?.[index]?.edad && (
                         <p className="text-error-500 text-sm mt-1">
@@ -1332,11 +1331,10 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
                         }`}
                       >
                         <option value="">Seleccione un rango</option>
-                        <option value="Menos de $500">Menos de $500</option>
-                        <option value="$500 - $1000">$500 - $1000</option>
-                        <option value="$1001 - $2000">$1001 - $2000</option>
-                        <option value="$2001 - $3000">$2001 - $3000</option>
-                        <option value="Más de $3000">Más de $3000</option>
+                        <option value="0">No Trabaja</option>
+                        <option value="1">Menos de $470</option>
+                        <option value="2">$470 - $1000</option>
+                        <option value="3">Más de $1000</option>
                       </select>
                       {errors.miembros?.[index]?.sueldo && (
                         <p className="text-error-500 text-sm mt-1">
@@ -1390,7 +1388,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
               <button
                 type="button"
                 className="mt-4 rounded-md bg-indigo-500 px-4 py-2 text-white hover:bg-indigo-600"
-                onClick={() => append({ sueldo: '', edad: '', parentesco: 'otro', ocupacion: 'otro' })}
+                onClick={() => append({ sueldo: "", edad: "", parentesco: "otro", ocupacion: "otro" })}
               >
                 Agregar miembro
               </button>
@@ -1411,15 +1409,15 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             </Label>
             <Select
               options={[
-                { value: 'si', label: 'Sí' },
-                { value: 'no', label: 'No' },
+                { value: 'S', label: 'Sí' },
+                { value: 'N', label: 'No' },
               ]}
               onChange={(value) => {
-                setValue('tieneDiscapacidad', value as 'si' | 'no', { shouldValidate: true });
-                if (value === 'no') {
+                setValue('tieneDiscapacidad', value as 'S' | 'N', { shouldValidate: true });
+                if (value === 'N') {
                   setValue('discapacidad', undefined, { shouldValidate: true });
                 } else {
-                  setValue('discapacidad', { tipo: 'fisica', porcentaje: 0, carnet: '' }, { shouldValidate: true });
+                  setValue('discapacidad', { tipo: 'fisica', porcentaje: 0, carnet: '', tieneDiagnosticoPresuntivo: 'NO' }, { shouldValidate: true });
                   setValue('discapacidad.carnet', getValues('cedula') );
                 }
               }}
@@ -1431,7 +1429,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
           </div>
 
           {/* Campos condicionales para discapacidad */}
-          {tieneDiscapacidad === 'si' && (
+          {tieneDiscapacidad === 'S' && (
             <div className="col-span-1 sm:col-span-2">
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>
@@ -1450,6 +1448,24 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
                     onChange={(value) => setValue('discapacidad.tipo', value as 'fisica' | 'psiquica' | 'auditiva' | 'visual' | 'intelectual' | 'multiple', { shouldValidate: true })}
                     placeholder="Seleccione el tipo de discapacidad"
                   />
+                </div>
+                <div>
+                  <Label>
+                    ¿Tiene Diagnóstico Presuntivo? <span className="text-error-500">*</span>
+                  </Label>
+                  <Select
+                    options={[
+                      { value: 'SI', label: 'Sí' },
+                      { value: 'NO', label: 'No' },
+                    ]}
+                    onChange={(value) => {
+                      setValue('discapacidad.tieneDiagnosticoPresuntivo', value as 'SI' | 'NO', { shouldValidate: true });
+                    }}
+                    placeholder="Seleccione una opción"
+                  />
+                  {errors.discapacidad?.tieneDiagnosticoPresuntivo && (
+                    <p className="mt-1 text-sm text-error-500">{errors.discapacidad?.tieneDiagnosticoPresuntivo?.message}</p>
+                  )}
                 </div>
                 <div>
                   <Label>
@@ -1485,12 +1501,12 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             </Label>
             <Select
               options={[
-                { value: 'si', label: 'Sí' },
-                { value: 'no', label: 'No' },
+                { value: 'S', label: 'Sí' },
+                { value: 'N', label: 'No' },
               ]}
               onChange={(value) => {
-                setValue('tieneEnfermedadCronica', value as 'si' | 'no', { shouldValidate: true });
-                if (value === 'no') {
+                setValue('tieneEnfermedadCronica', value as 'S' | 'N', { shouldValidate: true });
+                if (value === 'N') {
                   setValue('enfermedadCronica', undefined, { shouldValidate: true });
                 } else {
                   setValue('enfermedadCronica', { nombre: '', lugaresTratamiento: 'otro' }, { shouldValidate: true });
@@ -1504,7 +1520,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
           </div>
 
           {/* Campos condicionales para enfermedad crónica */}
-          {tieneEnfermedadCronica === 'si' && (
+          {tieneEnfermedadCronica === 'S' && (
             <div className="col-span-1 sm:col-span-2">
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <div>

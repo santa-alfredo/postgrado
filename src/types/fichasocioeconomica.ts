@@ -1,3 +1,11 @@
+interface Option {
+    value: string;
+    label: string;
+    tipoValue?: string;
+    tipoLabel?: string;
+}
+
+
 export type FichaSocioeconomica = {
     nombres: string;
     cedula: string;
@@ -7,14 +15,17 @@ export type FichaSocioeconomica = {
     email: string;
     nacionalidad: string;
     telefono: string;
-    colegio: string;
+    colegio: Option | null;
     tipoColegio: string;
     indigenaNacionalidad: number;
-    beca: string | null;
+    beca: string;
     carrera: {
         id: string | null;
         nombre: string | null;
     };
+    promedio: number;
+    direccion: string;
+    etnia: "mestizo" | "indigena" | "otro" | "blanco" | "afroecuatoriano" | "montubio" | "mulato" | "negro" | "ninguno" | undefined;
     // nacionalidad: string;
     // etnia: string;
 };
