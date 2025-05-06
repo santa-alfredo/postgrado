@@ -10,6 +10,8 @@ import { useEffect, useState } from "react";
 import axiosInstance from "../../services/axiosInstance";
 import { FichaSocioeconomica } from "../../types/fichasocioeconomica";
 import ColegioAsyncSelect from "../ficha/AsyncSelect";
+import Swal from 'sweetalert2';
+
 
 
 // Esquema de validación con Zod
@@ -77,7 +79,7 @@ const formSchema = z.object({
       .max(100, "La universidad no puede exceder 100 caracteres"),
     carrera: z.string()
       .min(2, "La carrera debe tener al menos 2 caracteres")
-      .max(100, "La carrera no puede exceder 100 caracteres"),
+      .max(50, "La carrera no puede exceder 50 caracteres"),
     razon: z.string()
       .min(2, "La razón debe tener al menos 2 caracteres")
       .max(100, "La razón no puede exceder 100 caracteres"),
@@ -88,23 +90,23 @@ const formSchema = z.object({
   computadora: z.enum(["S", "N"], { required_error: "La computadora es requerida" }),
 
   // Información Económica
-  ingresosFamiliares: z.string()
-    .min(1, "Los ingresos familiares son requeridos"),
+  // ingresosFamiliares: z.string()
+  //   .min(1, "Los ingresos familiares son requeridos"),
 
-  gastosMensuales: z.string()
-    .min(1, "Los gastos mensuales son requeridos"),
+  // gastosMensuales: z.string()
+  //   .min(1, "Los gastos mensuales son requeridos"),
 
-  vivienda: z.string()
-    .min(1, "Los gastos en vivienda son requeridos"),
-    // .regex(/^\d+(\.\d{1,2})?$/, "Los gastos deben ser un número con máximo 2 decimales"),
-  transporte: z.string()
-    .min(1, "Los gastos en transporte son requeridos"),
+  // vivienda: z.string()
+  //   .min(1, "Los gastos en vivienda son requeridos"),
+  //   // .regex(/^\d+(\.\d{1,2})?$/, "Los gastos deben ser un número con máximo 2 decimales"),
+  // transporte: z.string()
+  //   .min(1, "Los gastos en transporte son requeridos"),
 
-  alimentacion: z.string()
-    .min(1, "Los gastos en alimentación son requeridos"),
+  // alimentacion: z.string()
+  //   .min(1, "Los gastos en alimentación son requeridos"),
 
-  otrosGastos: z.string()
-    .min(1, "Los otros gastos son requeridos"),
+  // otrosGastos: z.string()
+  //   .min(1, "Los otros gastos son requeridos"),
     
 
   // Información Laboral
@@ -126,12 +128,6 @@ const formSchema = z.object({
         negocio: z.string()
           .min(2, "El negocio debe tener al menos 2 caracteres")
           .max(100, "El negocio no puede exceder 100 caracteres"),
-        ingresos: z.number()
-          .min(0, "Los ingresos no pueden ser negativos")
-          .max(1000000, "Los ingresos no pueden exceder 1000000"),
-        gastos: z.number()
-          .min(0, "Los gastos no pueden ser negativos")
-          .max(1000000, "Los gastos no pueden exceder 1000000"),
         actividades: z.string()
           .min(2, "Las actividades deben tener al menos 2 caracteres")
           .max(100, "Las actividades no pueden exceder 100 caracteres"),
@@ -170,6 +166,8 @@ const formSchema = z.object({
   // Familia
   estadoFamiliar: z.enum(["cabezaHogar", "vivePadres", "independiente", "otro"], { required_error: "El estado familiar es requerido" }),
   tipoCasa: z.string().min(1, "El tipo de casa es requerido"),
+  origenRecursos: z.string().min(1, "El tipo de origen de recurso es requerido"),
+  origenEstudios: z.string().min(1, "El tipo de origen de recurso es requerido"),
   miembros: z
     .array(
       z.object({
@@ -307,10 +305,11 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
       promedio: defaultData.promedio || 0,
       direccion: defaultData.direccion || "",
       etnia: defaultData.etnia || "mestizo",
+      anioGraduacion: defaultData.anioGraduacion || 2000,
+      semestre: defaultData.semestre || "",
 
       ciudadId: '',
       parroquiaId: '',
-      anioGraduacion: undefined,
       situacionLaboral: undefined,
       laboral: undefined,
       estadoFamiliar: undefined,
@@ -340,25 +339,51 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
 
   const onSubmit = async (data: FormData) => {
     console.log(data);
+    // Mostrar mensaje de carga
+    Swal.fire({
+      title: 'Enviando...',
+      text: 'Por favor espera mientras se guarda la información.',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+    });
     // Aquí se enviaría la información al backend
     try {
       const response = await axiosInstance.post(`/ficha/ficha-socioeconomica`, data);
+      // Cerrar el loading
+      Swal.close();
 
       const result = response.data as { ficha: FichaSocioeconomica };
       onSuccess(result.ficha);
     } catch (error: any) {
+      Swal.close(); // Cierra el loading si hay error
       if (error.response) {
+        console.error("Error del backend:", error.response.data);
         // El servidor respondió con un código diferente a 2xx
-        alert(`Error del servidor: ${error.response.data.detail || "Error desconocido"}`);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error del servidor',
+          text: error.response?.data?.detail || 'Ocurrió un error inesperado.',
+        });
         // Aquí puedes mostrar error.response.data.detail al usuario si es un 422 de FastAPI
       } else if (error.request) {
         // La solicitud fue hecha pero no se recibió respuesta
         console.error("No se recibió respuesta del servidor:", error.request);
-        alert("No se recibió respuesta del servidor.");
+        Swal.fire({
+          icon: 'warning',
+          title: 'Sin respuesta',
+          text: 'No se recibió respuesta del servidor.',
+        });
       } else {
         // Ocurrió un error al configurar la solicitud
         console.error("Error al configurar la solicitud:", error.message);
-        alert("Error al configurar la solicitud: " + error.message);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error de configuración',
+          text: error.message,
+        });
       }
       // mostrar error al usuario si deseas
     }
@@ -368,7 +393,11 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
     const mensajes = Object.values(errors)
       .map((err: any) => err.message)
       .join("\n");
-    alert(`Errores de validación:\n${mensajes}`);
+    Swal.fire({
+      icon: 'error',
+      title: 'Errores de validación',
+      html: mensajes,
+    });
   };
 
   // Estado para las opciones filtradas
@@ -431,7 +460,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
           setValue('laboral', { tipo: 'empleado', empresa: '', cargo: '', sueldo: "" }, { shouldValidate: true });
           break;
         case 'negocio propio':
-          setValue('laboral', { tipo: 'negocio propio', negocio: '', ingresos: 0, gastos: 0, actividades: '' }, { shouldValidate: true });
+          setValue('laboral', { tipo: 'negocio propio', negocio: '', actividades: '' }, { shouldValidate: true });
           break;
         case 'pensionado':
           setValue('laboral', { tipo: 'pensionado', fuente: '', monto: 0 }, { shouldValidate: true });
@@ -863,7 +892,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
         </div>
       </div>
       {/* Sección 4: Información Económica */}
-      <div className="rounded-lg border border-gray-200 p-6 dark:border-gray-800">
+      {/* <div className="rounded-lg border border-gray-200 p-6 dark:border-gray-800">
         <h3 className="mb-4 text-lg font-semibold">Información Económica</h3>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
@@ -948,36 +977,8 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
               <option value="Más de $1000">Más de $1000</option>
             </select>
           </div>
-          <div>
-            <Label>Tiene internet en casa? <span className="text-error-500">*</span></Label>
-            <select
-              {...register("internet")}
-              className={`w-full rounded-md border px-3 py-2 ${errors.internet ? 'border-red-500' : 'border-gray-300'}`}
-            >
-              <option value="">Seleccione una opción</option>
-              <option value="S">Sí</option>
-              <option value="N">No</option>
-            </select>
-            {errors.internet && (
-              <p className="text-error-500 text-sm mt-1">{errors.internet.message}</p>
-            )}
-          </div>
-          <div>
-            <Label>Cuenta con una computadora/laptop en casa? <span className="text-error-500">*</span></Label>
-            <select
-              {...register("computadora")}
-              className={`w-full rounded-md border px-3 py-2 ${errors.computadora ? 'border-red-500' : 'border-gray-300'}`}
-            >
-              <option value="">Seleccione una opción</option>
-              <option value="S">Sí</option>
-              <option value="N">No</option>
-            </select>
-            {errors.computadora && (
-              <p className="text-error-500 text-sm mt-1">{errors.computadora.message}</p>
-            )}
-          </div>
         </div>
-      </div>
+      </div> */}
       {/* Sección 5: Información Laboral */}
       <div className="rounded-lg border border-gray-200 p-6 dark:border-gray-800">
         <h3 className="mb-4 text-lg font-semibold">Información Laboral</h3>
@@ -1052,28 +1053,6 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
                 error={!!(errors.laboral as any)?.negocio}
                 hint={(errors.laboral as any)?.negocio?.message}
               />
-            </div>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <div>
-                <Label>Ingresos <span className="text-error-500">*</span></Label>
-                <Input
-                  type="number"
-                  step={0.01}
-                  register={register("laboral.ingresos")}
-                  error={!!(errors.laboral as any)?.ingresos}
-                  hint={(errors.laboral as any)?.ingresos?.message}
-                />
-              </div>
-              <div>
-                <Label>Gastos <span className="text-error-500">*</span></Label>
-                <Input
-                  type="number"
-                  step={0.01}
-                  register={register("laboral.gastos")}
-                  error={!!(errors.laboral as any)?.gastos}
-                  hint={(errors.laboral as any)?.gastos?.message}
-                />
-              </div>
             </div>
             <div>
               <Label>Actividades <span className="text-error-500">*</span></Label>
@@ -1216,10 +1195,37 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
       </div>
       {/* Sección 7: Familia */}
       <div className="rounded-lg border border-gray-200 p-6 dark:border-gray-800">
-        <h3 className="mb-4 text-lg font-semibold">Familia</h3>
+        <h3 className="mb-4 text-lg font-semibold">Familia y Economia</h3>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <div>
+            <Label>Tiene internet en casa? <span className="text-error-500">*</span></Label>
+            <select
+              {...register("internet")}
+              className={`w-full rounded-md border px-3 py-2 ${errors.internet ? 'border-red-500' : 'border-gray-300'}`}
+            >
+              <option value="">Seleccione una opción</option>
+              <option value="S">Sí</option>
+              <option value="N">No</option>
+            </select>
+            {errors.internet && (
+              <p className="text-error-500 text-sm mt-1">{errors.internet.message}</p>
+            )}
+          </div>
+          <div>
+            <Label>Cuenta con una computadora/laptop en casa? <span className="text-error-500">*</span></Label>
+            <select
+              {...register("computadora")}
+              className={`w-full rounded-md border px-3 py-2 ${errors.computadora ? 'border-red-500' : 'border-gray-300'}`}
+            >
+              <option value="">Seleccione una opción</option>
+              <option value="S">Sí</option>
+              <option value="N">No</option>
+            </select>
+            {errors.computadora && (
+              <p className="text-error-500 text-sm mt-1">{errors.computadora.message}</p>
+            )}
+          </div>
           {/* Estado Familiar */}
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div>
               <Label>
                 Su casa es <span className="text-error-500">*</span>
@@ -1233,6 +1239,53 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
                 ]}
                 onChange={(value) => setValue('tipoCasa', value as 'propia' | 'arrendada' | 'familiar' | 'prestada', { shouldValidate: true })}
                 placeholder="Seleccione su tipo de casa"
+              />
+            </div>
+            <div>
+              <Label>
+                Origen de recursos de sustento <span className="text-error-500">*</span>
+              </Label>
+              <Select
+                options={[
+                  { value: '1', label: 'Recursos propios' },
+                  { value: '2', label: 'Padres / Tutores' },
+                  { value: '3', label: 'Pareja sentimental' },
+                  { value: '4', label: 'Hermanos' },
+                  { value: '5', label: 'Otros miembros del hogar' },
+                  { value: '6', label: 'Otros familiares' },
+                  { value: '7', label: 'Beca de estudio' },
+                  { value: '8', label: 'Crédito educativo' },
+                  { value: '9', label: 'No registra' },
+                ]}
+                onChange={(value) =>
+                  setValue('origenRecursos', value as string, { shouldValidate: true })
+                }
+                placeholder="Seleccione el origen de los recursos"
+              />
+            </div>
+            <div>
+              <Label>
+                Origen de recursos para estudios <span className="text-error-500">*</span>
+              </Label>
+              <Select
+                options={[
+                  { value: '1', label: 'Sueldos y salarios propios' },
+                  { value: '2', label: 'Sueldos y salarios de padres o tutores' },
+                  { value: '3', label: 'Sueldos y salarios de hijos' },
+                  { value: '4', label: 'Sueldos y salarios de otros miembros del hogar' },
+                  { value: '5', label: 'Venta de bienes y/o servicios' },
+                  { value: '6', label: 'Rentas (inversiones, bienes)' },
+                  { value: '7', label: 'Remesas' },
+                  { value: '8', label: 'Pensiones' },
+                  { value: '9', label: 'Apoyos económicos de otras personas fuera del hogar' },
+                  { value: '10', label: 'Apoyos económicos del Estado' },
+                  { value: '11', label: 'Apoyos económicos de ONG' },
+                  { value: '12', label: 'Donaciones / Caridad' },
+                ]}
+                onChange={(value) =>
+                  setValue('origenEstudios', value as string, { shouldValidate: true })
+                }
+                placeholder="Seleccione el origen de recursos para estudios"
               />
             </div>
             <div>
@@ -1258,7 +1311,6 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
               <p className="mt-1 text-sm text-error-500">{errors.estadoFamiliar.message}</p>
             )}
             </div>
-          </div>
           {/* Miembros (condicional para cabezaHogar o vivePadres) */}
           {(estadoFamiliar === 'cabezaHogar' || estadoFamiliar === 'vivePadres') && (
             <div className="col-span-1 sm:col-span-2">

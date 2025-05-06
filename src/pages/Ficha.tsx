@@ -5,6 +5,7 @@ import FormSocioeconomico from "../components/FichaSocioeconomica/FormSocioecono
 import axiosInstance from "../services/axiosInstance";
 import { useNavigate } from "react-router";
 import { FichaResponse, FichaSocioeconomica } from "../types/fichasocioeconomica";
+import { useAuth } from "../context/AuthContext";
 const API_BASE = import.meta.env.VITE_API_BASE;
 
 const defaultFicha: FichaSocioeconomica = {
@@ -27,9 +28,12 @@ const defaultFicha: FichaSocioeconomica = {
   promedio: 0,
   direccion: '',
   etnia: 'mestizo',
+  semestre: '',
+  anioGraduacion: 2000
 };
 export default function Ficha() {
   const navigate = useNavigate();
+  const { user } = useAuth()
   const [ficha, setFicha] = useState<FichaResponse["ficha"] | null>(null);
   const [periodoValido, setPeriodoValido] = useState(false);
 
@@ -85,7 +89,7 @@ export default function Ficha() {
             </p>
             <a
               className="inline-block rounded-xl bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-              href={`${API_BASE}/ficha/${ficha.cedula}/pdf`}
+              href={`${API_BASE}/ficha/${user?.username}/pdf`}
               target="_blank"
               rel="noopener noreferrer"
             >

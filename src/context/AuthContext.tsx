@@ -36,6 +36,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         window.history.replaceState({}, '', url.toString());
 
         await verifyToken();
+        navigate('/ficha');
       } else {
         throw new Error('Error al establecer el token');
       }

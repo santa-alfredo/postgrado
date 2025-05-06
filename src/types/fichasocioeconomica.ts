@@ -17,12 +17,14 @@ export type FichaSocioeconomica = {
     telefono: string;
     colegio: Option | null;
     tipoColegio: string;
+    anioGraduacion: number;
     indigenaNacionalidad: number;
     beca: string;
     carrera: {
         id: string | null;
         nombre: string | null;
     };
+    semestre: string;
     promedio: number;
     direccion: string;
     etnia: "mestizo" | "indigena" | "otro" | "blanco" | "afroecuatoriano" | "montubio" | "mulato" | "negro" | "ninguno" | undefined;
