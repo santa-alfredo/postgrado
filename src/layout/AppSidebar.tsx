@@ -28,7 +28,7 @@ const navItems: NavItem[] = [
   {
     icon: <GridIcon />,
     name: "Dashboard",
-    subItems: [{ name: "Ecommerce", path: "/", pro: false }],
+    subItems: [{ name: "Perfil", path: "/", pro: false }],
   },
   {
     icon: <GridIcon />,
@@ -363,7 +363,7 @@ const AppSidebar: React.FC = () => {
                 }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
-                  "Others"
+                  "Otros"
                 ) : (
                   <HorizontaLDots />
                 )}

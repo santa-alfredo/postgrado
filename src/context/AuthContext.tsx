@@ -6,6 +6,7 @@ import axiosInstance from '../services/axiosInstance';
 interface User {
   username: string;
   email: string;
+  name: string | null;
 }
 
 interface AuthContextType {

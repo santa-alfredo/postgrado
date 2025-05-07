@@ -164,7 +164,7 @@ const formSchema = z.object({
   relacionPareja: z.enum(["excelente", "buena", "regular", "mala"], { required_error: "La relación con la pareja es requerida" }).optional(),
 
   // Familia
-  estadoFamiliar: z.enum(["cabezaHogar", "vivePadres", "independiente", "otro"], { required_error: "El estado familiar es requerido" }),
+  estadoFamiliar: z.enum(["cabezaHogar", "familia", "independiente"], { required_error: "El estado familiar es requerido" }),
   tipoCasa: z.string().min(1, "El tipo de casa es requerido"),
   origenRecursos: z.string().min(1, "El tipo de origen de recurso es requerido"),
   origenEstudios: z.string().min(1, "El tipo de origen de recurso es requerido"),
@@ -556,7 +556,21 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
           </div>
           <div>
             <Label>Fecha de Nacimiento</Label>
-            <p className="px-3 py-2 border rounded-md bg-gray-50 dark:bg-gray-900 dark:text-white">{getValues("fechaNacimiento") || "-"}</p>
+            {getValues("fechaNacimiento") === "" ? (
+              <input
+                type="date"
+                className="w-full rounded-md border border-gray-300 p-2 text-sm"
+                {...register("fechaNacimiento")}
+              />
+            ) : (
+              <p className="px-3 py-2 border rounded-md bg-gray-50 dark:bg-gray-900 dark:text-white">
+                {getValues("fechaNacimiento")}
+              </p>
+            )}
+
+            {errors.fechaNacimiento && (
+              <p className="mt-1 text-sm text-error-500">{errors.fechaNacimiento.message}</p>
+            )}
           </div>
           <div>
             <Label>Sexo</Label>
@@ -1295,12 +1309,11 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             <Select
               options={[
                 { value: 'cabezaHogar', label: 'Cabeza de hogar' },
-                { value: 'vivePadres', label: 'Vive con sus padres' },
+                { value: 'familia', label: 'Vive con familiar' },
                 { value: 'independiente', label: 'Independiente' },
-                { value: 'otro', label: 'Otro Familiar' },
               ]}
               onChange={(value) => {
-                setValue('estadoFamiliar', value as 'cabezaHogar' | 'vivePadres' | 'independiente' | 'otro', { shouldValidate: true });
+                setValue('estadoFamiliar', value as 'cabezaHogar' | 'familia' | 'independiente', { shouldValidate: true });
                 if (value === 'independiente') {
                   setValue('miembros', [], { shouldValidate: true });
                 }
@@ -1312,7 +1325,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             )}
             </div>
           {/* Miembros (condicional para cabezaHogar o vivePadres) */}
-          {(estadoFamiliar === 'cabezaHogar' || estadoFamiliar === 'vivePadres') && (
+          {(estadoFamiliar === 'cabezaHogar' || estadoFamiliar === 'familia') && (
             <div className="col-span-1 sm:col-span-2">
               <h4 className="mb-4 text-lg font-semibold">
                 {estadoFamiliar === 'cabezaHogar' ? 'Miembros de la familia' : 'Miembros del hogar'}
