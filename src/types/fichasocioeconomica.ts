@@ -5,6 +5,10 @@ interface Option {
     tipoLabel?: string;
 }
 
+interface seleccion{
+    value: string;
+    label: string;
+}
 
 export type FichaSocioeconomica = {
     nombres: string;
@@ -16,7 +20,6 @@ export type FichaSocioeconomica = {
     nacionalidad: string;
     telefono: string;
     colegio: Option | null;
-    tipoColegio: string;
     anioGraduacion: number;
     indigenaNacionalidad: number;
     beca: string;
@@ -28,6 +31,9 @@ export type FichaSocioeconomica = {
     promedio: number;
     direccion: string;
     etnia: "mestizo" | "indigena" | "otro" | "blanco" | "afroecuatoriano" | "montubio" | "mulato" | "negro" | "ninguno" | undefined;
+    provincia : seleccion | null;
+    ciudad: seleccion | null;
+    parroquia: seleccion | null;
     // nacionalidad: string;
     // etnia: string;
 };

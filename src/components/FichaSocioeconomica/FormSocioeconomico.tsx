@@ -1,4 +1,4 @@
-import { useFieldArray, useForm, useWatch } from "react-hook-form";
+import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 // import { useSpellcheck } from "../../hooks/useSpellcheck";
@@ -31,8 +31,17 @@ const formSchema = z.object({
     .regex(/^\d+$/, "La cédula solo puede contener números"),
   fechaNacimiento: z.string()
     .min(1, "La fecha de nacimiento es requerida"),
+  sexo: z.string()
+    .min(1, "El sexo es requerido"),
+  otroSexo: z.string().optional(),
+  
+
   genero: z.string()
     .min(1, "El género es requerido"),
+  orientacionSexual: z.string()
+    .min(1, "El género es requerido"),
+  otroOrientacionSexual: z.string().optional(),
+  
   estadoCivil: z.string()
     .min(1, "El estado civil es requerido"),
   telefono: z.string()
@@ -48,12 +57,21 @@ const formSchema = z.object({
   direccion: z.string()
     .min(10, "La dirección debe tener al menos 10 caracteres")
     .max(200, "La dirección no puede exceder 200 caracteres"),
-  provinciaId: z.string()
-    .min(1, "La provincia es requerida"),
-  ciudadId: z.string()
-    .min(1, "La ciudad es requerida"),
-  parroquiaId: z.string()
-    .min(1, "La parroquia es requerida"),
+  
+  provincia: z.object({
+    value: z.string(),
+    label: z.string().min(1, "Debe seleccionar una provincia "),
+  }).nullable(),
+  
+  ciudad: z.object({
+    value: z.string(),
+    label: z.string().min(1, "Debe seleccionar una provincia"),
+  }).nullable(),
+  
+  parroquia: z.object({
+    value: z.string(),
+    label: z.string().min(1, "Debe seleccionar una provincia"),
+  }).nullable(),
 
   // Información Académica
   carrera: z.string()
@@ -61,12 +79,11 @@ const formSchema = z.object({
 
   colegio: z.object({
     value: z.string(),
-    label: z.string(),
+    label: z.string().min(1, "Debe seleccionar un colegio y si no encuentra su colegio comunicarse con admisiones"),
     tipoValue: z.string().optional(),
     tipoLabel: z.string().optional(),
   }).nullable(),
-  tipoColegio: z.string()
-    .min(1, "El tipo de colegio es requerido"),
+
   anioGraduacion: z.number().int().min(1900, 'Año inválido').max(2025, 'Año inválido'),
   semestre: z.string()
     .min(1, "El semestre es requerido"),
@@ -179,20 +196,25 @@ const formSchema = z.object({
     )
     .optional(),
 
-    // Salud
-    tieneDiscapacidad: z.enum(["S", "N"], { required_error: "La discapacidad es requerida" }),
-    discapacidad: z.object({
-      tipo: z.enum(["fisica", "psiquica", "auditiva", "visual", "intelectual", "multiple"], { required_error: "El tipo de discapacidad es requerido" }),
-      porcentaje: z.number().int().min(30, "El porcentaje de discapacidad debe ser al menos 30%").max(100, "El porcentaje de discapacidad no puede exceder 100%"),
-      tieneDiagnosticoPresuntivo: z.enum(["SI", "NO"], { required_error: "El diagnóstico presuntivo es requerido" }),
-      carnet: z.string().min(1, "El carnet de discapacidad es requerido"),
-    }).optional(),
+  // Salud
+  tieneDiscapacidad: z.enum(["S", "N"], { required_error: "La discapacidad es requerida" }),
+  discapacidad: z.object({
+    tipo: z.enum(["fisica", "psiquica", "auditiva", "visual", "intelectual", "multiple"], { required_error: "El tipo de discapacidad es requerido" }),
+    porcentaje: z.number().int().min(30, "El porcentaje de discapacidad debe ser al menos 30%").max(100, "El porcentaje de discapacidad no puede exceder 100%"),
+    tieneDiagnosticoPresuntivo: z.enum(["SI", "NO"], { required_error: "El diagnóstico presuntivo es requerido" }),
+    carnet: z.string().min(1, "El carnet de discapacidad es requerido"),
+  }).optional(),
 
-    tieneEnfermedadCronica: z.enum(["S", "N"], { required_error: "La enfermedad crónica es requerida" }),
-    enfermedadCronica: z.object({
-      nombre: z.string().min(1, "El nombre de la enfermedad es requerido"),
-      lugaresTratamiento: z.enum(["clinicaPrivada", "publica", "iess", "otro"], { required_error: "El lugar de tratamiento es requerido" }),
-    }).optional(),
+  tieneEnfermedadCronica: z.enum(["S", "N"], { required_error: "La enfermedad crónica es requerida" }),
+  enfermedadCronica: z.object({
+    nombre: z.string().min(1, "El nombre de la enfermedad es requerido"),
+    lugaresTratamiento: z.string().min(1, "El carnet de discapacidad es requerido"),
+  }).optional(),
+
+  contactoParentesco: z.string().min(1, "El parentesco es requerido"),
+  contactoNombre: z.string().min(1, "Nombre de la Persona de Contacto"),
+  contactoCelular: z.string()
+  .regex(/^\d{10}$/, "El teléfono debe tener exactamente 10 dígitos numéricos, no espacios en blanco"),
 
   // Documentos
   // documentos: z.instanceof(FileList)
@@ -244,38 +266,11 @@ type Props = {
   defaultData: FichaSocioeconomica;
 };
 
-
-const generoLabels: Record<string, string> = {
-  M: "Masculino",
-  F: "Femenino",
-  "": "No informado",
-};
-
-const tipoColegioOptions = [
-  { value: "1", label: "NO REGISTRA" },
-  { value: "2", label: "PARTICULAR" },
-  { value: "3", label: "FISCAL" },
-  { value: "4", label: "FISCOMISIONAL" },
-  { value: "5", label: "MILITARES Y AFINES" },
-  { value: "6", label: "MUNICIPAL" },
-  { value: "7", label: "EXTRANJERO" },
-  { value: "8", label: "PRIVADO" },
-];
-
-interface Provincia {
-  id: string;
-  nombre: string;
+interface Seleccione {
+  value: string;
+  label: string;
 }
 
-interface Ciudad {
-  id: string;
-  nombre: string;
-}
-
-interface Parroquia {
-  id: string;
-  nombre: string;
-}
 
 export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
   const {
@@ -298,7 +293,6 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
       nacionalidad: defaultData.nacionalidad || "",
       telefono: defaultData.telefono || "",
       colegio: defaultData.colegio ?? null,
-      tipoColegio: defaultData.tipoColegio || "",
       indigenaNacionalidad: defaultData.indigenaNacionalidad || 0,
       beca: defaultData.beca || "N",
       carrera: defaultData.carrera.id || "",
@@ -307,9 +301,10 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
       etnia: defaultData.etnia || "mestizo",
       anioGraduacion: defaultData.anioGraduacion || 2000,
       semestre: defaultData.semestre || "",
+      provincia: defaultData.provincia ?? null,
+      ciudad: defaultData.ciudad ?? null,
+      parroquia: defaultData.parroquia ?? null,
 
-      ciudadId: '',
-      parroquiaId: '',
       situacionLaboral: undefined,
       laboral: undefined,
       estadoFamiliar: undefined,
@@ -329,6 +324,8 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
   const estadoCivil = useWatch({ control, name: 'estadoCivil' });
   const estadoFamiliar = useWatch({ control, name: 'estadoFamiliar' });
   const etniaSeleccionada  = useWatch({ control, name: 'etnia' });
+  const sexo = watch("sexo");
+  const orientacionSexual = watch("orientacionSexual")
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -400,54 +397,6 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
     });
   };
 
-  // Estado para las opciones filtradas
-  // const [ciudadesFiltradas, setCiudadesFiltradas] = useState<Ubicacion[]>([]);
-  // const [parroquiasFiltradas, setParroquiasFiltradas] = useState<Ubicacion[]>([]);
-
-  // Función para manejar el cambio de provincia
-  // const handleProvinciaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-  //   const provinciaId = e.target.value;
-
-  //   // Actualizar el valor de provinciaId en el formulario
-  //   setValue("provinciaId", provinciaId);
-
-  //   // Filtrar ciudades basado en la provincia seleccionada
-  //   if (provinciaId) {
-  //     const ciudades = locationData.ciudades.filter(
-  //       ciudad => ciudad.provinciaId === provinciaId
-  //     );
-  //     setCiudadesFiltradas(ciudades);
-  //   } else {
-  //     setCiudadesFiltradas([]);
-  //   }
-
-  //   // Resetear ciudad y parroquia
-  //   setValue("ciudadId", "");
-  //   setValue("parroquiaId", "");
-  //   setParroquiasFiltradas([]);
-  // };
-
-  // Función para manejar el cambio de ciudad
-  // const handleCiudadChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-  //   const ciudadId = e.target.value;
-
-  //   // Actualizar el valor de ciudadId en el formulario
-  //   setValue("ciudadId", ciudadId);
-
-  //   // Filtrar parroquias basado en la ciudad seleccionada
-  //   if (ciudadId) {
-  //     const parroquias = locationData.parroquias.filter(
-  //       parroquia => parroquia.ciudadId === ciudadId
-  //     );
-  //     setParroquiasFiltradas(parroquias);
-  //   } else {
-  //     setParroquiasFiltradas([]);
-  //   }
-
-  //   // Resetear parroquia
-  //   setValue("parroquiaId", "");
-  // };
-
   // Limpiar campos de laboral cuando cambia situacionLaboral
   const handleSituacionLaboralChange = (value: string) => {
     setValue('situacionLaboral', value as 'empleado' | 'negocio propio' | 'desempleado' | 'pensionado' | 'otro', { shouldValidate: true });
@@ -484,61 +433,87 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
     }
   };
 
+  const [editandoColegio, setEditandoColegio] = useState(false);
+  const [editDireccion, setEditDireccion] = useState(false);
    // Cuando cambia la provincia, obtener las ciudades
-  const [provincias, setProvincias] = useState<Provincia[]>([]);
-  const [ciudadesFiltradas, setCiudadesFiltradas] = useState<Ciudad[]>([]);
-  const [parroquiasFiltradas, setParroquiasFiltradas] = useState<Parroquia[]>([]);
+  const [provincias, setProvincias] = useState<Seleccione[]>([]);
+  const [ciudadesFiltradas, setCiudadesFiltradas] = useState<Seleccione[]>([]);
+  const [parroquiasFiltradas, setParroquiasFiltradas] = useState<Seleccione[]>([]);
 
-  const provinciaId = watch("provinciaId");
-  const ciudadId = watch("ciudadId");
+  const provincia = watch("provincia");
+  const ciudad = watch("ciudad");
+  const parroquia = watch("parroquia");
+  const colegioSeleccionado = watch("colegio");
 
-  // Cargar Provincias
+  // Cargar Provincias (solo una vez al principio)
   useEffect(() => {
+    if (!provincia?.label){
+      setEditDireccion(true)
+    }
+    if(!colegioSeleccionado?.label){
+      setEditandoColegio(true)
+    }
     const fetchProvincias = async () => {
       try {
-        const response = await axiosInstance.get<Provincia[]>(`/ficha/provincias`);
+        const response = await axiosInstance.get<Seleccione[]>(`/ficha/provincias`);
         setProvincias(response.data);
+        console.log('provincias', response.data)
       } catch (error) {
-        console.error("Error al cargar las ciudades:", error);
+        console.error("Error al cargar las provincias:", error);
       }
     };
     fetchProvincias();
-  }, [provinciaId, setValue]);
+  }, []);  // Este useEffect solo se ejecuta una vez cuando el componente se monta.
 
-  // Cuando cambia la provincia, obtener las ciudades
+  // Cuando cambia la provincia, obtener las ciudades (y evitar llamada si provincia ya tiene label)
   useEffect(() => {
+    console.log('provincia cambio', provincia)
     const fetchCiudades = async () => {
-      if (provinciaId) {
+      // Solo hacemos la llamada al backend si la provincia no tiene un label ya cargado
+      if (provincia?.value && editDireccion) {
         try {
-          const response = await axiosInstance.get<Ciudad[]>(`/ficha/ciudades?provinciaId=${provinciaId}`);
+          const response = await axiosInstance.get<Seleccione[]>(`/ficha/ciudades?provinciaId=${provincia?.value}`);
           setCiudadesFiltradas(response.data);
           setParroquiasFiltradas([]); // Resetear parroquias
-          setValue("ciudadId", ""); // Resetear ciudad
-          setValue("parroquiaId", ""); // Resetear parroquia
+          setValue("ciudad", null); // Resetear ciudad
+          setValue("parroquia", null); // Resetear parroquia
         } catch (error) {
           console.error("Error al cargar las ciudades:", error);
         }
       }
     };
-    fetchCiudades();
-  }, [provinciaId, setValue]);
+
+    // Solo se ejecuta si la provincia cambia o se establece un valor
+    if (provincia?.value && provincia?.label) {
+      // Si ya tienes la provincia con label, no haces la llamada al backend
+      fetchCiudades();
+    }
+  }, [provincia, setValue]);  // Se ejecuta cuando `provincia` cambia
 
   // Cuando cambia la ciudad, obtener las parroquias
   useEffect(() => {
     const fetchParroquias = async () => {
-      if (ciudadId) {
+      if (ciudad?.value && editDireccion) {
         try {
-          const response = await axiosInstance.get<Parroquia[]>(`/ficha/parroquias?ciudadId=${ciudadId}`);
+          const response = await axiosInstance.get<Seleccione[]>(`/ficha/parroquias?ciudadId=${ciudad?.value}`);
           setParroquiasFiltradas(response.data);
-          setValue("parroquiaId", ""); // Resetear parroquia
+          setValue("parroquia", null); // Resetear parroquia
         } catch (error) {
           console.error("Error al cargar las parroquias:", error);
         }
       }
     };
-    fetchParroquias();
-  }, [ciudadId, setValue]);
 
+    // Solo ejecuta si ciudad está definida
+    fetchParroquias();
+  }, [ciudad, setValue]);  // Se ejecuta cuando `ciudad` cambia
+
+  // Solo activar edición si no hay colegio en el primer render
+  useEffect(() => {
+    if (!defaultData.colegio) {
+      setEditandoColegio(true);
+    }
+  }, [defaultData.colegio]);
 
   return (
     <Form onSubmit={handleSubmit(onSubmit, onError)} className="space-y-8">
@@ -573,8 +548,78 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             )}
           </div>
           <div>
-            <Label>Sexo</Label>
-            <p className="px-3 py-2 border rounded-md bg-gray-50 dark:bg-gray-900 dark:text-white">{generoLabels[getValues("genero") || ""] || "-"}</p>
+            <Label>Sexo <span className="text-error-500">*</span></Label>
+            <select
+              {...register(`genero`)}
+              className={`w-full rounded-md border px-3 py-2 ${
+                errors.genero ? 'border-red-500' : 'border-gray-300'
+              }`}
+            >
+              <option value="" disabled>Seleccione su sexo</option>
+              <option value="M">Masculino</option>
+              <option value="F">Femenino</option>
+            </select>
+            {errors.genero && (
+              <p className="text-error-500 text-sm mt-1">
+                {errors.genero?.message}
+              </p>
+            )}
+          </div>
+          <div>
+            <Label>Identidad de género</Label>
+            <Select
+              options={[
+                { value: "H", label: "Hombre" },
+                { value: "M", label: "Mujer" },
+                { value: "PB", label: "Persona no binaria" },
+                { value: "O", label: "Otro" },
+                { value: "N", label: "Prefiero no responder" },
+              ]}
+              value={sexo}
+              onChange={(value) => setValue("sexo", value)}
+              placeholder="Seleccione su genero"
+            />
+            {errors.sexo && (
+              <p className="mt-1 text-sm text-error-500">{errors.sexo.message}</p>
+            )}
+            {sexo === "O" && (
+              <div className="mt-4">
+               <Label>Especifique el otro identidad de género <span className="text-error-500">*</span></Label>
+              <Input
+                register={register("otroSexo")}
+                error={!!errors.otroSexo}
+                hint={errors.otroSexo?.message}
+              />
+              </div>
+            )}
+          </div>
+          <div>
+            <Label>Orientación sexual</Label>
+            <Select
+              options={[
+                { value: "HT", label: "Heterosexual" },
+                { value: "HM", label: "Homosexual (gay o lesbiana)" },
+                { value: "BS", label: "Bisexual" },
+                { value: "O", label: "Otro" },
+                { value: "N", label: "Prefiero no responder" },
+              ]}
+              value={orientacionSexual || ''}
+              onChange={(value) => setValue("orientacionSexual", value)}
+              placeholder="Seleccione su orientacion sexual"
+            />
+            {errors.orientacionSexual && (
+              <p className="mt-1 text-sm text-error-500">{errors.orientacionSexual.message}</p>
+            )}
+            {orientacionSexual === "O" && (
+              <div className="mt-4">
+               <Label>Especifique la otra orientacion sexual <span className="text-error-500">*</span></Label>
+              <Input
+                register={register("otroOrientacionSexual")}
+                error={!!errors.otroOrientacionSexual}
+                hint={errors.otroOrientacionSexual?.message}
+              />
+              </div>
+            )}
           </div>
           <div>
             <Label>Estado Civil <span className="text-error-500">*</span></Label>
@@ -616,31 +661,31 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             <Label>Pais de Origen <span className="text-error-500">*</span></Label>
             <Select
               options={[
-                { value: "593", label: "ECUADOR" },
-                { value: "58", label: "VENEZUELA" },
-                { value: "57", label: "COLOMBIA" },
-                { value: "53", label: "CUBA" },
-                { value: "1", label: "ESTADOS UNIDOS" },
-                { value: "34", label: "ESPAÑA" },
-                { value: "51", label: "PERU" },
-                { value: "52", label: "MEXICO" },
-                { value: "39", label: "ITALIA" },
-                { value: "504", label: "HONDURAS" },
-                { value: "506", label: "COSTA RICA" },
-                { value: "507", label: "PANAMA" },
-                { value: "509", label: "HAITÍ" },
-                { value: "54", label: "ARGENTINA" },
-                { value: "55", label: "BRASIL" },
-                { value: "56", label: "CHILE" },
-                { value: "591", label: "BOLIVIA" },
-                { value: "809", label: "REPUBLICA DOMINICANA" },
-                { value: "973", label: "BANRAIN" },
-                { value: "41", label: "SUIZA" },
-                { value: "43", label: "AUSTRIA" },
-                { value: "49", label: "ALEMANIA" },
-                { value: "514", label: "CANADA" },
-                { value: "82", label: "COREA" },
-                { value: "380", label: "UKRANIA" },
+                { value: "ECUADOR", label: "ECUADOR" },
+                { value: "VENEZUELA", label: "VENEZUELA" },
+                { value: "COLOMBIA", label: "COLOMBIA" },
+                { value: "CUBA", label: "CUBA" },
+                { value: "ESTADOS UNIDOS", label: "ESTADOS UNIDOS" },
+                { value: "ESPAÑA", label: "ESPAÑA" },
+                { value: "PERU", label: "PERU" },
+                { value: "MEXICO", label: "MEXICO" },
+                { value: "ITALIA", label: "ITALIA" },
+                { value: "HONDURAS", label: "HONDURAS" },
+                { value: "COSTA RICA", label: "COSTA RICA" },
+                { value: "PANAMA", label: "PANAMA" },
+                { value: "HAITI", label: "HAITÍ" },
+                { value: "ARGENTINA", label: "ARGENTINA" },
+                { value: "BRASIL", label: "BRASIL" },
+                { value: "CHILE", label: "CHILE" },
+                { value: "BOLIVIA", label: "BOLIVIA" },
+                { value: "REPUBLICA DOMINICANA", label: "REPUBLICA DOMINICANA" },
+                { value: "BANRAIN", label: "BANRAIN" },
+                { value: "SUIZA", label: "SUIZA" },
+                { value: "AUSTRIA", label: "AUSTRIA" },
+                { value: "ALEMANIA", label: "ALEMANIA" },
+                { value: "CANADA", label: "CANADA" },
+                { value: "COREA", label: "COREA" },
+                { value: "UKRANIA", label: "UKRANIA" },
               ]}
               onChange={(value) => setValue("nacionalidad", value)}
               placeholder="Seleccione su nacionalidad"
@@ -651,7 +696,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             )}
           </div>
           <div>
-            <Label>Reconocimiento etnico <span className="text-error-500">*</span></Label>
+            <Label>Reconocimiento étnico <span className="text-error-500">*</span></Label>
             <Select
               options={[
                 { value: "mestizo", label: "Mestizo" },
@@ -695,32 +740,39 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
       {/* Sección 2: Información Académica */}
       <div className="rounded-lg border border-gray-200 p-6 dark:border-gray-800">
         <h3 className="mb-4 text-lg font-semibold">Información Académica</h3>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-          <div>
+        <div className="grid grid-cols-1">
             <Label>Colegio <span className="text-error-500">*</span></Label>
-            <ColegioAsyncSelect
-              value={watch("colegio") ?? null}
-              onChange={(option) => setValue("colegio", option)}
-              setTipoColegio={(tipo) => setValue("tipoColegio", tipo.value)}
-            />
-            {errors.colegio && (
-              <p className="mt-1 text-sm text-error-500">{errors.colegio.message}</p>
+            {editandoColegio ? (
+              <ColegioAsyncSelect
+                value={watch("colegio") ?? null}
+                onChange={(option) => setValue("colegio", option)}
+              />
+            ) :(
+              <div className="flex items-center justify-between bg-gray-100 p-2 rounded-md">
+                <span className="text-sm">
+                  {colegioSeleccionado?.label}
+                  {colegioSeleccionado?.tipoLabel && (
+                    <span className="ml-2 text-xs text-gray-500">
+                      ({colegioSeleccionado.tipoLabel})
+                    </span>
+                  )}
+                </span>
+                <button
+                  type="button"
+                  className="ml-2 text-blue-600 text-sm underline"
+                  onClick={() => {
+                    setEditandoColegio(true);
+                  }}
+                >
+                  Cambiar
+                </button>
+              </div>
             )}
-          </div>
-          <div>
-            <Label>Tipo de Colegio <span className="text-error-500">*</span></Label>
-            <Select
-              value={watch("tipoColegio") || ""}
-              options={tipoColegioOptions}
-              onChange={(value) => setValue("tipoColegio", value)}
-              placeholder="Seleccione el tipo de colegio"
-              disabled={true}
-            />
-            {errors.tipoColegio && (
-              <p className="mt-1 text-sm text-error-500">{errors.tipoColegio.message}</p>
+            {errors.colegio?.label && (
+              <p className="mt-1 text-sm text-error-500">{errors.colegio.label.message}</p>
             )}
-          </div>
-
+        </div>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div>
             <Label>Año de Graduación <span className="text-error-500">*</span></Label>
             <Input
@@ -763,7 +815,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
               className={`w-full rounded-md border px-3 py-2 ${errors.semestre ? 'border-red-500' : 'border-gray-300'}`}
             >
               <option value="">Seleccione un semestre</option>
-              {[...Array(9)].map((_, i) => (
+              {[...Array(2)].map((_, i) => (
                 <option key={i + 1} value={i + 1}>{`Semestre ${i + 1}`}</option>
               ))}
             </select>
@@ -843,66 +895,126 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             )}
           </div>
 
-          {/* Select Provincia */}
-          <div>
-            <Label>Provincia <span className="text-error-500">*</span></Label>
-            <select
-              className={`w-full rounded-md border px-3 py-2 ${errors.provinciaId ? 'border-red-500' : 'border-gray-300'}`}
-              {...register("provinciaId")}
-            >
-              <option value="">Seleccione una provincia</option>
-              {provincias.map((provincia: any) => (
-                <option key={provincia.id} value={provincia.id}>
-                  {provincia.nombre}
-                </option>
-              ))}
-            </select>
-            {errors.provinciaId && (
-              <p className="mt-1 text-sm text-red-500">{errors.provinciaId.message}</p>
-            )}
-          </div>
+          {editDireccion ? (
+            <>
+            {/* Select Provincia */}
+            <Controller
+              control={control}
+              name="provincia"
+              render={({ field }) => (
+                <div>
+                  <Label>
+                    Provincia <span className="text-error-500">*</span>
+                  </Label>
+                  <select
+                    className={`w-full rounded-md border px-3 py-2 ${errors.provincia ? 'border-red-500' : 'border-gray-300'}`}
+                    value={field.value?.value || ""}
+                    onChange={(e) => {
+                      const selected = provincias.find((p) => p.value === e.target.value);
+                      field.onChange(selected ? { value: selected.value, label: selected.label } : null);
+                    }}
+                  >
+                    <option value="">Seleccione una provincia</option>
+                    {provincias.map((provincia, index) => (
+                      <option key={provincia.value || index} value={provincia.value}>
+                        {provincia.label}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.provincia?.label && (
+                    <p className="mt-1 text-sm text-red-500">{errors.provincia.label.message}</p>
+                  )}
+                </div>
+              )}
+            />
 
-          {/* Select Ciudad */}
-          <div>
-            <Label>Canton <span className="text-error-500">*</span></Label>
-            <select
-              className={`w-full rounded-md border px-3 py-2 ${errors.ciudadId ? 'border-red-500' : 'border-gray-300'}`}
-              {...register("ciudadId")}
-              disabled={!ciudadesFiltradas.length}
-            >
-              <option value="">Seleccione una ciudad</option>
-              {ciudadesFiltradas.map((ciudad: any) => (
-                <option key={ciudad.id} value={ciudad.id}>
-                  {ciudad.nombre}
-                </option>
-              ))}
-            </select>
-            {errors.ciudadId && (
-              <p className="mt-1 text-sm text-red-500">{errors.ciudadId.message}</p>
-            )}
-          </div>
+            {/* Select Ciudad */}
+            <Controller
+              control={control}
+              name="ciudad"
+              render={({ field }) => (
+                <div>
+                  <Label>
+                    Cantón <span className="text-error-500">*</span>
+                  </Label>
+                  <select
+                    className={`w-full rounded-md border px-3 py-2 ${errors.ciudad ? 'border-red-500' : 'border-gray-300'}`}
+                    value={field.value?.value || ""}
+                    onChange={(e) => {
+                      const selected = ciudadesFiltradas.find((c) => c.value === e.target.value);
+                      field.onChange(selected ? { value: selected.value, label: selected.label } : null);
+                    }}
+                    disabled={!ciudadesFiltradas.length}
+                  >
+                    <option value="">Seleccione una ciudad</option>
+                    {ciudadesFiltradas.map((ciudad) => (
+                      <option key={ciudad.value} value={ciudad.value}>
+                        {ciudad.label}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.ciudad?.label && (
+                    <p className="mt-1 text-sm text-red-500">{errors.ciudad.label.message}</p>
+                  )}
+                </div>
+              )}
+            />
 
-          {/* Select Parroquia */}
-          <div>
-            <Label>Parroquia <span className="text-error-500">*</span></Label>
-            <select
-              className={`w-full rounded-md border px-3 py-2 ${errors.parroquiaId ? 'border-red-500' : 'border-gray-300'}`}
-              {...register("parroquiaId")}
-              disabled={!parroquiasFiltradas.length}
-            >
-              <option value="">Seleccione una parroquia</option>
-              {parroquiasFiltradas.map((parroquia: any) => (
-                <option key={parroquia.id} value={parroquia.id}>
-                  {parroquia.nombre}
-                </option>
-              ))}
-            </select>
-            {errors.parroquiaId && (
-              <p className="mt-1 text-sm text-red-500">{errors.parroquiaId.message}</p>
-            )}
-          </div>
-
-
+            {/* Select Parroquia */}
+            <Controller
+              control={control}
+              name="parroquia"
+              render={({ field }) => (
+                <div>
+                  <Label>
+                    Parroquia <span className="text-error-500">*</span>
+                  </Label>
+                  <select
+                    className={`w-full rounded-md border px-3 py-2 ${errors.parroquia ? 'border-red-500' : 'border-gray-300'}`}
+                    value={field.value?.value || ""}
+                    onChange={(e) => {
+                      const selected = parroquiasFiltradas.find((p) => p.value === e.target.value);
+                      field.onChange(selected ? { value: selected.value, label: selected.label } : null);
+                    }}
+                    disabled={!parroquiasFiltradas.length}
+                  >
+                    <option value="">Seleccione una parroquia</option>
+                    {parroquiasFiltradas.map((parroquia, index) => (
+                      <option key={parroquia.value || index} value={parroquia.value}>
+                        {parroquia.label}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.parroquia?.label && (
+                    <p className="mt-1 text-sm text-red-500">{errors.parroquia.label.message}</p>
+                  )}
+                </div>
+              )}
+            />
+            </>
+          ):(
+            <div className="space-y-2">
+              <div>
+                <Label>Provincia</Label>
+                <p className="text-sm">{provincia?.label}</p>
+              </div>
+              <div>
+                <Label>Ciudad</Label>
+                <p className="text-sm">{ciudad?.label}</p>
+              </div>
+              <div>
+                <Label>Parroquia</Label>
+                <p className="text-sm">{parroquia?.label}</p>
+              </div>
+              <button
+                type="button"
+                className="mt-2 text-blue-600 underline"
+                onClick={() => setEditDireccion(true)}
+              >
+                Cambiar dirección
+              </button>
+            </div>
+          )}
         </div>
       </div>
       {/* Sección 4: Información Económica */}
@@ -1047,9 +1159,9 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
                   className={`w-full rounded-md border px-3 py-2 ${!!(errors.laboral as any)?.sueldo ? 'border-red-500' : 'border-gray-300'}`}
                 >
                   <option value="">Seleccione un rango</option>
-                  <option value="1">Menos de $470</option>
-                  <option value="2">$470 - $1000</option>
-                  <option value="3">Más de $1000</option>
+                  <option value="Menos de $470">Menos de $470</option>
+                  <option value="$470 - $1000">$470 - $1000</option>
+                  <option value="Mas de $1000">Más de $1000</option>
                 </select>
                 {errors.laboral && (errors.laboral as any).sueldo && (
                   <p className="text-error-500 text-sm mt-1">{(errors.laboral as any).sueldo?.message}</p>
@@ -1257,19 +1369,19 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             </div>
             <div>
               <Label>
-                Origen de recursos de sustento <span className="text-error-500">*</span>
+                Origen de recursos de estudios <span className="text-error-500">*</span>
               </Label>
               <Select
                 options={[
-                  { value: '1', label: 'Recursos propios' },
-                  { value: '2', label: 'Padres / Tutores' },
-                  { value: '3', label: 'Pareja sentimental' },
-                  { value: '4', label: 'Hermanos' },
-                  { value: '5', label: 'Otros miembros del hogar' },
-                  { value: '6', label: 'Otros familiares' },
-                  { value: '7', label: 'Beca de estudio' },
-                  { value: '8', label: 'Crédito educativo' },
-                  { value: '9', label: 'No registra' },
+                  { value: 'Recursos Propios', label: 'Recursos propios' },
+                  { value: 'Padres / Tutores', label: 'Padres / Tutores' },
+                  { value: 'Pareja Sentimental', label: 'Pareja Sentimental' },
+                  { value: 'Hermanos', label: 'Hermanos' },
+                  { value: 'Otros miembros del hogar', label: 'Otros miembros del hogar' },
+                  { value: 'Otros familiares', label: 'Otros familiares' },
+                  { value: 'Beca de estudio', label: 'Beca de estudio' },
+                  { value: 'Crédito educativo', label: 'Crédito educativo' },
+                  { value: 'No registra', label: 'No registra' },
                 ]}
                 onChange={(value) =>
                   setValue('origenRecursos', value as string, { shouldValidate: true })
@@ -1279,22 +1391,22 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             </div>
             <div>
               <Label>
-                Origen de recursos para estudios <span className="text-error-500">*</span>
+                Origen de recursos de sustento <span className="text-error-500">*</span>
               </Label>
               <Select
                 options={[
-                  { value: '1', label: 'Sueldos y salarios propios' },
-                  { value: '2', label: 'Sueldos y salarios de padres o tutores' },
-                  { value: '3', label: 'Sueldos y salarios de hijos' },
-                  { value: '4', label: 'Sueldos y salarios de otros miembros del hogar' },
-                  { value: '5', label: 'Venta de bienes y/o servicios' },
-                  { value: '6', label: 'Rentas (inversiones, bienes)' },
-                  { value: '7', label: 'Remesas' },
-                  { value: '8', label: 'Pensiones' },
-                  { value: '9', label: 'Apoyos económicos de otras personas fuera del hogar' },
-                  { value: '10', label: 'Apoyos económicos del Estado' },
-                  { value: '11', label: 'Apoyos económicos de ONG' },
-                  { value: '12', label: 'Donaciones / Caridad' },
+                  { value: 'Sueldos y salarios propios', label: 'Sueldos y salarios propios' },
+                  { value: 'Sueldos y salarios de padres o tutores', label: 'Sueldos y salarios de padres o tutores' },
+                  { value: 'Sueldos y salarios de hijos', label: 'Sueldos y salarios de hijos' },
+                  { value: 'Sueldos y salarios de otros miembros del hogar', label: 'Sueldos y salarios de otros miembros del hogar' },
+                  { value: 'Venta de bienes y/o servicios', label: 'Venta de bienes y/o servicios' },
+                  { value: 'Rentas (inversiones, bienes)', label: 'Rentas (inversiones, bienes)' },
+                  { value: 'Remesas', label: 'Remesas' },
+                  { value: 'Pensiones', label: 'Pensiones' },
+                  { value: 'Apoyos económicos de otras personas fuera del hogar', label: 'Apoyos económicos de otras personas fuera del hogar' },
+                  { value: 'Apoyos económicos del Estado', label: 'Apoyos económicos del Estado' },
+                  { value: 'Apoyos económicos de ONG', label: 'Apoyos económicos de ONG' },
+                  { value: 'Donaciones / Caridad', label: 'Donaciones / Caridad' },
                 ]}
                 onChange={(value) =>
                   setValue('origenEstudios', value as string, { shouldValidate: true })
@@ -1396,10 +1508,10 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
                         }`}
                       >
                         <option value="">Seleccione un rango</option>
-                        <option value="0">No Trabaja</option>
-                        <option value="1">Menos de $470</option>
-                        <option value="2">$470 - $1000</option>
-                        <option value="3">Más de $1000</option>
+                        <option value="No Trabaja">No Trabaja</option>
+                        <option value="Menos de $470">Menos de $470</option>
+                        <option value="$470 - $1000">$470 - $1000</option>
+                        <option value="Mas de $1000">Más de $1000</option>
                       </select>
                       {errors.miembros?.[index]?.sueldo && (
                         <p className="text-error-500 text-sm mt-1">
@@ -1470,7 +1582,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
           {/* ¿Presenta discapacidad? */}
           <div className="col-span-1 sm:col-span-2">
             <Label>
-              ¿Presenta discapacidad? <span className="text-error-500">*</span>
+              ¿Presenta discapacidad o Necesidades educativas especiales (NEE)? <span className="text-error-500">*</span>
             </Label>
             <Select
               options={[
@@ -1574,7 +1686,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
                 if (value === 'N') {
                   setValue('enfermedadCronica', undefined, { shouldValidate: true });
                 } else {
-                  setValue('enfermedadCronica', { nombre: '', lugaresTratamiento: 'otro' }, { shouldValidate: true });
+                  setValue('enfermedadCronica', { nombre: '', lugaresTratamiento: '' }, { shouldValidate: true });
                 }
               }}
               placeholder="Seleccione una opción"
@@ -1604,13 +1716,13 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
                     </Label>
                     <Select
                       options={[
-                        { value: 'clinicaPrivada', label: 'Clínica privada' },
-                        { value: 'publica', label: 'Pública' },
-                        { value: 'iess', label: 'IESS' },
-                        { value: 'otro', label: 'Otro' },
+                        { value: 'Clinica Privada', label: 'Clínica privada' },
+                        { value: 'Publica', label: 'Pública' },
+                        { value: 'IESS', label: 'IESS' },
+                        { value: 'Otro', label: 'Otro' },
                       ]}
                       onChange={(value) =>
-                        setValue('enfermedadCronica.lugaresTratamiento', value as 'clinicaPrivada' | 'publica' | 'iess' | 'otro', { shouldValidate: true })
+                        setValue('enfermedadCronica.lugaresTratamiento', value as string, { shouldValidate: true })
                       }
                       placeholder="Seleccione el lugar de tratamiento"
                     />
@@ -1623,6 +1735,51 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
               </div>
             </div>
           )}
+        </div>
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+          {/* Campos de contacto de emergencia */}
+          <div>
+            <Label>
+              Contacto de Emergencia <span className="text-error-500">*</span>
+            </Label>
+            <Select
+              options={[
+                { value: 'conyuge', label: 'Cónyuge' },
+                { value: 'hijo', label: 'Hijo/a' },
+                { value: 'padre', label: 'Padre' },
+                { value: 'madre', label: 'Madre' },
+                { value: 'hermano', label: 'Hermano/a' },
+                { value: 'otro', label: 'Otro' },
+              ]}
+              onChange={(value) => {
+                setValue('contactoParentesco', value);
+              }}
+              placeholder="Seleccione una opción"
+            />
+            {errors.contactoParentesco && (
+              <p className="mt-1 text-sm text-error-500">{errors.contactoParentesco.message}</p>
+            )}
+          </div>
+          <div>
+            <Label>
+              Nombre <span className="text-error-500">*</span>
+            </Label>
+            <Input
+              register={register('contactoNombre')}
+              error={!!errors.contactoNombre}
+              hint={errors.contactoNombre?.message}
+            />
+          </div>
+          <div>
+            <Label>
+              Celular <span className="text-error-500">*</span>
+            </Label>
+            <Input
+              register={register('contactoCelular')}
+              error={!!errors.contactoCelular}
+              hint={errors.contactoCelular?.message}
+            />
+          </div>
         </div>
       </div>
 

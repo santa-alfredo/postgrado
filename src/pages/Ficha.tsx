@@ -18,7 +18,6 @@ const defaultFicha: FichaSocioeconomica = {
   nacionalidad: '',
   telefono: '',
   colegio: null,
-  tipoColegio: '',
   indigenaNacionalidad: 0,
   beca: 'N',
   carrera: {
@@ -29,7 +28,10 @@ const defaultFicha: FichaSocioeconomica = {
   direccion: '',
   etnia: 'mestizo',
   semestre: '',
-  anioGraduacion: 2000
+  anioGraduacion: 2000,
+  provincia: null,
+  ciudad: null,
+  parroquia: null
 };
 export default function Ficha() {
   const navigate = useNavigate();
