@@ -15,13 +15,15 @@ export type FichaSocioeconomica = {
     cedula: string;
     fechaNacimiento: string;
     genero: "M" | "F" |"";
+    generoIdentidad: string;
+    orientacionSexual: string;
     estadoCivil: "SOL" | "CAS" | "DIV" | "VIU" | "";
     email: string;
     nacionalidad: string;
     telefono: string;
     colegio: Option | null;
     anioGraduacion: number;
-    indigenaNacionalidad: number;
+    indigenaNacionalidad: string;
     beca: string;
     carrera: {
         id: string | null;
@@ -30,12 +32,22 @@ export type FichaSocioeconomica = {
     semestre: string;
     promedio: number;
     direccion: string;
-    etnia: "mestizo" | "indigena" | "otro" | "blanco" | "afroecuatoriano" | "montubio" | "mulato" | "negro" | "ninguno" | undefined;
-    provincia : seleccion | null;
-    ciudad: seleccion | null;
-    parroquia: seleccion | null;
-    // nacionalidad: string;
-    // etnia: string;
+    etnia: "MET" | "IND" | "OTR" | "BLA" | "AFR" | "MON" | "MUL" | "NEG" | "NIN" | undefined;
+    pais? : seleccion | undefined;
+    provincia? : seleccion | undefined;
+    ciudad?: seleccion | undefined;
+    parroquia?: seleccion | undefined;
+    
+    tipoCasa: string;
+    internet: "S" | "N" | "";
+    computadora: "S" | "N" | "";
+    origenRecursos: string;
+    origenEstudios: string;
+    relacionCompa?: "EXCELENTE" | "BUENA"| "REGULAR" | "MALA";
+    integracionUmet?: "S" | "N";
+    relacionDocente?: "EXCELENTE" | "BUENA"| "REGULAR" | "MALA";
+    relacionPadres?: "EXCELENTE" | "BUENA"| "REGULAR" | "MALA";
+    relacionPareja?: "EXCELENTE" | "BUENA"| "REGULAR" | "MALA";
 };
 
 export type FichaResponse = {

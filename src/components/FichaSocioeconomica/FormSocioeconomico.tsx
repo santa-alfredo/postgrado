@@ -21,23 +21,20 @@ const formSchema = z.object({
     .min(2, "Los nombres deben tener al menos 2 caracteres")
     .max(50, "Los nombres no pueden exceder 50 caracteres")
     .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Los nombres solo pueden contener letras y espacios"),
-  // apellidos: z.string()
-  //   .min(2, "Los apellidos deben tener al menos 2 caracteres")
-  //   .max(50, "Los apellidos no pueden exceder 50 caracteres")
-  // .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Los apellidos solo pueden contener letras y espacios"),
+
   cedula: z.string()
     .min(10, "La cédula debe tener al menos 10 dígitos")
     .max(13, "La cédula no puede exceder 13 dígitos")
     .regex(/^\d+$/, "La cédula solo puede contener números"),
   fechaNacimiento: z.string()
     .min(1, "La fecha de nacimiento es requerida"),
-  sexo: z.string()
+  genero: z.string()
+    .min(1, "El género es requerido"),
+
+  generoIdentidad: z.string()
     .min(1, "El sexo es requerido"),
   otroSexo: z.string().optional(),
   
-
-  genero: z.string()
-    .min(1, "El género es requerido"),
   orientacionSexual: z.string()
     .min(1, "El género es requerido"),
   otroOrientacionSexual: z.string().optional(),
@@ -50,14 +47,19 @@ const formSchema = z.object({
     .email("Debe ser un correo electrónico válido"),
   nacionalidad: z.string()
     .min(1, "La nacionalidad es requerida"),
-  etnia: z.enum(["mestizo", "indigena", "blanco", "afroecuatoriano", "montubio", "mulato", "negro", "otro", "ninguno"], { required_error: "La etnia es requerida" }),
-  indigenaNacionalidad: z.number(),
+  etnia: z.enum(["MET", "IND", "BLA", "AFR", "MON", "MUL", "NEG", "OTR", "NIN"], { required_error: "La etnia es requerida" }),
+  indigenaNacionalidad: z.string().min(1, "La nacionalidad indigena es requerida"),
 
   cambioResidencia: z.enum(["S", "N"], { required_error: "El cambio de residencia es requerido" }),
   direccion: z.string()
     .min(10, "La dirección debe tener al menos 10 caracteres")
-    .max(200, "La dirección no puede exceder 200 caracteres"),
+    .max(100, "La dirección no puede exceder 100 caracteres"),
   
+  pais: z.object({
+      value: z.string(),
+      label: z.string().min(1, "Debe seleccionar un país "),
+    }).nullable(),
+
   provincia: z.object({
     value: z.string(),
     label: z.string().min(1, "Debe seleccionar una provincia "),
@@ -103,35 +105,15 @@ const formSchema = z.object({
   }).optional(),
 
   beca: z.string().nullable().optional(),
-  internet: z.enum(["S", "N"], { required_error: "La conexión a internet es requerida" }),
-  computadora: z.enum(["S", "N"], { required_error: "La computadora es requerida" }),
-
-  // Información Económica
-  // ingresosFamiliares: z.string()
-  //   .min(1, "Los ingresos familiares son requeridos"),
-
-  // gastosMensuales: z.string()
-  //   .min(1, "Los gastos mensuales son requeridos"),
-
-  // vivienda: z.string()
-  //   .min(1, "Los gastos en vivienda son requeridos"),
-  //   // .regex(/^\d+(\.\d{1,2})?$/, "Los gastos deben ser un número con máximo 2 decimales"),
-  // transporte: z.string()
-  //   .min(1, "Los gastos en transporte son requeridos"),
-
-  // alimentacion: z.string()
-  //   .min(1, "Los gastos en alimentación son requeridos"),
-
-  // otrosGastos: z.string()
-  //   .min(1, "Los otros gastos son requeridos"),
-    
+  internet: z.enum(["S", "N", ""], { required_error: "La conexión a internet es requerida" }),
+  computadora: z.enum(["S", "N",""], { required_error: "La computadora es requerida" }),
 
   // Información Laboral
-  situacionLaboral: z.enum(["empleado", "desempleado", "negocio propio", "pensionado", "otro"], { required_error: "La situación laboral es requerida" }),
+  situacionLaboral: z.enum(["EMPLEADO", "DESEMPLEADO", "NEGOCIO", "PENSIONADO", "OTRO"], { required_error: "La situación laboral es requerida" }),
   laboral: z.discriminatedUnion("tipo",
     [
       z.object({
-        tipo: z.literal("empleado"),
+        tipo: z.literal("EMPLEADO"),
         empresa: z.string()
           .min(2, "La empresa debe tener al menos 2 caracteres")
           .max(100, "La empresa no puede exceder 100 caracteres"),
@@ -141,7 +123,7 @@ const formSchema = z.object({
           sueldo: z.string().min(1, "El sueldo es requerido"),
       }),
       z.object({
-        tipo: z.literal("negocio propio"),
+        tipo: z.literal("NEGOCIO"),
         negocio: z.string()
           .min(2, "El negocio debe tener al menos 2 caracteres")
           .max(100, "El negocio no puede exceder 100 caracteres"),
@@ -150,7 +132,7 @@ const formSchema = z.object({
           .max(100, "Las actividades no pueden exceder 100 caracteres"),
       }),
       z.object({
-        tipo: z.literal('pensionado'),
+        tipo: z.literal('PENSIONADO'),
         fuente: z
           .string()
           .min(2, 'La fuente de la pensión debe tener al menos 2 caracteres')
@@ -160,25 +142,25 @@ const formSchema = z.object({
           .min(0, 'El monto no puede ser negativo'),
       }),
       z.object({
-        tipo: z.literal('otro'),
+        tipo: z.literal('OTRO'),
         descripcion: z
           .string()
           .min(2, 'La descripción debe tener al menos 2 caracteres')
           .max(100, 'La descripción no puede exceder 100 caracteres'),
       }),
       z.object({
-        tipo: z.literal('desempleado'),
+        tipo: z.literal('DESEMPLEADO'),
         dependiente: z.enum(["padre", "madre", "hermano", "otro"], { required_error: "El dependiente es requerido" }),
       }),
     ]
   ).optional(),
 
   // Relaciones Personales
-  relacionCompa: z.enum(["excelente", "buena", "regular", "mala"], { required_error: "La relación con compañeros es requerida" }),
+  relacionCompa: z.enum(["EXCELENTE", "BUENA", "REGULAR", "MALA"], { required_error: "La relación con compañeros es requerida" }),
   integracionUmet: z.enum(["S", "N"], { required_error: "La integración en UMET es requerida" }),
-  relacionDocente: z.enum(["excelente", "buena", "regular", "mala"], { required_error: "La relación con el docente es requerida" }),
-  relacionPadres: z.enum(["excelente", "buena", "regular", "mala"], { required_error: "La relación con los padres es requerida" }),
-  relacionPareja: z.enum(["excelente", "buena", "regular", "mala"], { required_error: "La relación con la pareja es requerida" }).optional(),
+  relacionDocente: z.enum(["EXCELENTE", "BUENA", "REGULAR", "MALA"], { required_error: "La relación con el docente es requerida" }),
+  relacionPadres: z.enum(["EXCELENTE", "BUENA", "REGULAR", "MALA"], { required_error: "La relación con los padres es requerida" }),
+  relacionPareja: z.enum(["EXCELENTE", "BUENA", "REGULAR", "MALA"], { required_error: "La relación con la pareja es requerida" }).optional(),
 
   // Familia
   estadoFamiliar: z.enum(["cabezaHogar", "familia", "independiente"], { required_error: "El estado familiar es requerido" }),
@@ -199,7 +181,7 @@ const formSchema = z.object({
   // Salud
   tieneDiscapacidad: z.enum(["S", "N"], { required_error: "La discapacidad es requerida" }),
   discapacidad: z.object({
-    tipo: z.enum(["fisica", "psiquica", "auditiva", "visual", "intelectual", "multiple"], { required_error: "El tipo de discapacidad es requerido" }),
+    tipo: z.enum(["FISICA", "PSIQUICA", "AUDITIVA", "VISUAL", "INTELECTUAL", "MULTIPLE"], { required_error: "El tipo de discapacidad es requerido" }),
     porcentaje: z.number().int().min(30, "El porcentaje de discapacidad debe ser al menos 30%").max(100, "El porcentaje de discapacidad no puede exceder 100%"),
     tieneDiagnosticoPresuntivo: z.enum(["SI", "NO"], { required_error: "El diagnóstico presuntivo es requerido" }),
     carnet: z.string().min(1, "El carnet de discapacidad es requerido"),
@@ -224,41 +206,42 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 const nacionalidadesIndigenas = [
-  { value: 1, label: "Tsáchila" },
-  { value: 2, label: "Waorani" },
-  { value: 3, label: "Zápara" },
-  { value: 4, label: "Andoa" },
-  { value: 5, label: "Kichwa" },
-  { value: 6, label: "Pastos" },
-  { value: 7, label: "Natabuela" },
-  { value: 8, label: "Otavalo" },
-  { value: 9, label: "Karanki" },
-  { value: 10, label: "Kayambi" },
-  { value: 11, label: "Kitukara" },
-  { value: 12, label: "Panzaleo" },
-  { value: 13, label: "Chibuleo" },
-  { value: 14, label: "Salasaka" },
-  { value: 15, label: "Kisapincha" },
-  { value: 16, label: "Tomabela" },
-  { value: 17, label: "Waranka" },
-  { value: 18, label: "Puruha" },
-  { value: 19, label: "Kañari" },
-  { value: 20, label: "Saraguro" },
-  { value: 21, label: "Paltas" },
-  { value: 22, label: "Manta" },
-  { value: 23, label: "Huancavilca" },
-  { value: 24, label: "Achuar" },
-  { value: 25, label: "Awá" },
-  { value: 26, label: "Al Cofán" },
-  { value: 27, label: "Chachi" },
-  { value: 28, label: "Épera" },
-  { value: 29, label: "Huaorani" },
-  { value: 30, label: "Secoya" },
-  { value: 31, label: "Shuar" },
-  { value: 32, label: "Siona" },
-  { value: 33, label: "Shiwiar" },
-  { value: 34, label: "No Registra" },
+  { value: "1", label: "Tsáchila" },
+  { value: "2", label: "Waorani" },
+  { value: "3", label: "Zápara" },
+  { value: "4", label: "Andoa" },
+  { value: "5", label: "Kichwa" },
+  { value: "6", label: "Pastos" },
+  { value: "7", label: "Natabuela" },
+  { value: "8", label: "Otavalo" },
+  { value: "9", label: "Karanki" },
+  { value: "10", label: "Kayambi" },
+  { value: "11", label: "Kitukara" },
+  { value: "12", label: "Panzaleo" },
+  { value: "13", label: "Chibuleo" },
+  { value: "14", label: "Salasaka" },
+  { value: "15", label: "Kisapincha" },
+  { value: "16", label: "Tomabela" },
+  { value: "17", label: "Waranka" },
+  { value: "18", label: "Puruha" },
+  { value: "19", label: "Kañari" },
+  { value: "20", label: "Saraguro" },
+  { value: "21", label: "Paltas" },
+  { value: "22", label: "Manta" },
+  { value: "23", label: "Huancavilca" },
+  { value: "24", label: "Achuar" },
+  { value: "25", label: "Awá" },
+  { value: "26", label: "Al Cofán" },
+  { value: "27", label: "Chachi" },
+  { value: "28", label: "Épera" },
+  { value: "29", label: "Huaorani" },
+  { value: "30", label: "Secoya" },
+  { value: "31", label: "Shuar" },
+  { value: "32", label: "Siona" },
+  { value: "33", label: "Shiwiar" },
+  { value: "34", label: "No Registra" },
 ];
+
 
 
 type Props = {
@@ -293,17 +276,28 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
       nacionalidad: defaultData.nacionalidad || "",
       telefono: defaultData.telefono || "",
       colegio: defaultData.colegio ?? null,
-      indigenaNacionalidad: defaultData.indigenaNacionalidad || 0,
+      indigenaNacionalidad: defaultData.indigenaNacionalidad || "34",
       beca: defaultData.beca || "N",
-      carrera: defaultData.carrera.id || "",
+      carrera: defaultData.carrera.nombre || "",
       promedio: defaultData.promedio || 0,
       direccion: defaultData.direccion || "",
-      etnia: defaultData.etnia || "mestizo",
+      etnia: defaultData.etnia || "MET",
       anioGraduacion: defaultData.anioGraduacion || 2000,
       semestre: defaultData.semestre || "",
-      provincia: defaultData.provincia ?? null,
-      ciudad: defaultData.ciudad ?? null,
-      parroquia: defaultData.parroquia ?? null,
+      pais: defaultData.pais ?? undefined,
+      provincia: defaultData.provincia ?? undefined,
+      ciudad: defaultData.ciudad ?? undefined,
+      parroquia: defaultData.parroquia ?? undefined,
+      tipoCasa: defaultData.tipoCasa ?? "",
+      internet: defaultData.internet ?? "",
+      computadora: defaultData.computadora ?? "",
+      origenRecursos: defaultData.origenRecursos ?? "",
+      origenEstudios: defaultData.origenEstudios ?? "",
+      relacionCompa: defaultData.relacionCompa || undefined,
+      integracionUmet: defaultData.integracionUmet || undefined,
+      relacionDocente: defaultData.relacionDocente || undefined,
+      relacionPadres: defaultData.relacionPadres || undefined,
+      relacionPareja: defaultData.relacionPareja || undefined,
 
       situacionLaboral: undefined,
       laboral: undefined,
@@ -324,7 +318,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
   const estadoCivil = useWatch({ control, name: 'estadoCivil' });
   const estadoFamiliar = useWatch({ control, name: 'estadoFamiliar' });
   const etniaSeleccionada  = useWatch({ control, name: 'etnia' });
-  const sexo = watch("sexo");
+  const sexo = watch("generoIdentidad");
   const orientacionSexual = watch("orientacionSexual")
 
   const { fields, append, remove } = useFieldArray({
@@ -336,6 +330,14 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
 
   const onSubmit = async (data: FormData) => {
     console.log(data);
+
+    if (!editDireccion) {
+      data.pais = null;
+      data.provincia = null;
+      data.ciudad = null;
+      data.parroquia = null;
+    }
+  
     // Mostrar mensaje de carga
     Swal.fire({
       title: 'Enviando...',
@@ -399,23 +401,22 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
 
   // Limpiar campos de laboral cuando cambia situacionLaboral
   const handleSituacionLaboralChange = (value: string) => {
-    setValue('situacionLaboral', value as 'empleado' | 'negocio propio' | 'desempleado' | 'pensionado' | 'otro', { shouldValidate: true });
-    if (value === 'desempleado') {
-      console.log('desempleado', value);
+    setValue('situacionLaboral', value as 'EMPLEADO' | 'NEGOCIO' | 'DESEMPLEADO' | 'PENSIONADO' | 'OTRO', { shouldValidate: true });
+    if (value === 'DESEMPLEADO') {
       setValue('laboral', undefined, { shouldValidate: true });
     } else {
       switch (value) {
-        case 'empleado':
-          setValue('laboral', { tipo: 'empleado', empresa: '', cargo: '', sueldo: "" }, { shouldValidate: true });
+        case 'EMPLEADO':
+          setValue('laboral', { tipo: 'EMPLEADO', empresa: '', cargo: '', sueldo: "" }, { shouldValidate: true });
           break;
-        case 'negocio propio':
-          setValue('laboral', { tipo: 'negocio propio', negocio: '', actividades: '' }, { shouldValidate: true });
+        case 'NEGOCIO':
+          setValue('laboral', { tipo: 'NEGOCIO', negocio: '', actividades: '' }, { shouldValidate: true });
           break;
-        case 'pensionado':
-          setValue('laboral', { tipo: 'pensionado', fuente: '', monto: 0 }, { shouldValidate: true });
+        case 'PENSIONADO':
+          setValue('laboral', { tipo: 'PENSIONADO', fuente: '', monto: 0 }, { shouldValidate: true });
           break;
-        case 'otro':
-          setValue('laboral', { tipo: 'otro', descripcion: '' }, { shouldValidate: true });
+        case 'OTRO':
+          setValue('laboral', { tipo: 'OTRO', descripcion: '' }, { shouldValidate: true });
           break;
       }
     }
@@ -436,38 +437,53 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
   const [editandoColegio, setEditandoColegio] = useState(false);
   const [editDireccion, setEditDireccion] = useState(false);
    // Cuando cambia la provincia, obtener las ciudades
-  const [provincias, setProvincias] = useState<Seleccione[]>([]);
+   const [paises, setPais] = useState<Seleccione[]>([]);
+   const [provincias, setProvincias] = useState<Seleccione[]>([]);
   const [ciudadesFiltradas, setCiudadesFiltradas] = useState<Seleccione[]>([]);
   const [parroquiasFiltradas, setParroquiasFiltradas] = useState<Seleccione[]>([]);
 
+  const pais = watch("pais");
   const provincia = watch("provincia");
   const ciudad = watch("ciudad");
   const parroquia = watch("parroquia");
   const colegioSeleccionado = watch("colegio");
 
-  // Cargar Provincias (solo una vez al principio)
+  // Cargar Paises (solo una vez al principio)
   useEffect(() => {
-    if (!provincia?.label){
+    if (!pais?.label){
       setEditDireccion(true)
     }
     if(!colegioSeleccionado?.label){
       setEditandoColegio(true)
     }
+    const fetchPais = async () => {
+      try {
+        const response = await axiosInstance.get<Seleccione[]>(`/ficha/paises`);
+        setPais(response.data);
+      } catch (error) {
+        console.error("Error al cargar los paises:", error);
+      }
+    };
+    fetchPais();
+  }, []);  // Este useEffect solo se ejecuta una vez cuando el componente se monta.
+
+  // Cargar Provincias (solo una vez al principio)
+  useEffect(() => {
     const fetchProvincias = async () => {
       try {
-        const response = await axiosInstance.get<Seleccione[]>(`/ficha/provincias`);
+        const response = await axiosInstance.get<Seleccione[]>(`/ficha/provincias?paisId=${pais?.value}`);
         setProvincias(response.data);
-        console.log('provincias', response.data)
       } catch (error) {
         console.error("Error al cargar las provincias:", error);
       }
     };
-    fetchProvincias();
-  }, []);  // Este useEffect solo se ejecuta una vez cuando el componente se monta.
+    if (pais?.value && pais?.label) {
+      fetchProvincias();
+    }
+  }, [pais, setValue]);  // Este useEffect solo se ejecuta una vez cuando el componente se monta.
 
   // Cuando cambia la provincia, obtener las ciudades (y evitar llamada si provincia ya tiene label)
   useEffect(() => {
-    console.log('provincia cambio', provincia)
     const fetchCiudades = async () => {
       // Solo hacemos la llamada al backend si la provincia no tiene un label ya cargado
       if (provincia?.value && editDireccion) {
@@ -551,6 +567,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             <Label>Sexo <span className="text-error-500">*</span></Label>
             <select
               {...register(`genero`)}
+              disabled={!!defaultData.genero}
               className={`w-full rounded-md border px-3 py-2 ${
                 errors.genero ? 'border-red-500' : 'border-gray-300'
               }`}
@@ -576,11 +593,11 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
                 { value: "N", label: "Prefiero no responder" },
               ]}
               value={sexo}
-              onChange={(value) => setValue("sexo", value)}
+              onChange={(value) => setValue("generoIdentidad", value)}
               placeholder="Seleccione su genero"
             />
-            {errors.sexo && (
-              <p className="mt-1 text-sm text-error-500">{errors.sexo.message}</p>
+            {errors.generoIdentidad && (
+              <p className="mt-1 text-sm text-error-500">{errors.generoIdentidad.message}</p>
             )}
             {sexo === "O" && (
               <div className="mt-4">
@@ -689,7 +706,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
               ]}
               onChange={(value) => setValue("nacionalidad", value)}
               placeholder="Seleccione su nacionalidad"
-              value={getValues("nacionalidad")}
+              value={watch("nacionalidad")}
             />
             {errors.nacionalidad && (
               <p className="mt-1 text-sm text-error-500">{errors.nacionalidad.message}</p>
@@ -699,17 +716,17 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             <Label>Reconocimiento étnico <span className="text-error-500">*</span></Label>
             <Select
               options={[
-                { value: "mestizo", label: "Mestizo" },
-                { value: "indigena", label: "Indígena" },
-                { value: "blanco", label: "Blanco" },
-                { value: "afroecuatoriano", label: "Afroecuatoriano/a" },
-                { value: "montubio", label: "Montubio" },
-                { value: "mulato", label: "Mulatto" },
-                { value: "negro", label: "Negro" },
-                { value: "otro", label: "Otro" },
-                { value: "ninguno", label: "No Registra" },
+                { value: "MET", label: "Mestizo" },
+                { value: "IND", label: "Indígena" },
+                { value: "BLA", label: "Blanco" },
+                { value: "AFR", label: "Afroecuatoriano/a" },
+                { value: "MON", label: "Montubio" },
+                { value: "MUL", label: "Mulatto" },
+                { value: "NEG", label: "Negro" },
+                { value: "OTR", label: "Otro" },
+                { value: "NIN", label: "No Registra" },
               ]}
-              onChange={(value) => setValue("etnia", value as "mestizo" | "indigena" | "blanco" | "afroecuatoriano" | "montubio" | "mulato" | "negro" | "otro" | "ninguno")}
+              onChange={(value) => setValue("etnia", value as "MET" | "IND" | "BLA" | "AFR" | "MON" | "MUL" | "NEG" | "OTR" | "NIN")}
               placeholder="Seleccione su etnia"
               value={getValues("etnia") || ""}
             />
@@ -717,17 +734,16 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
               <p className="mt-1 text-sm text-error-500">{errors.etnia.message}</p>
             )}
           </div>
-          {etniaSeleccionada === "indigena" && (
+          {etniaSeleccionada === "IND" && (
             <div>
               <Label>Nacionalidad Indígena <span className="text-error-500">*</span></Label>
               <Select
                 options={nacionalidadesIndigenas.map(nacionalidad => ({ value: nacionalidad.value.toString(), label: nacionalidad.label }))}
                 onChange={(value) => {
-                  const parsedValue = parseInt(value);
-                  // Si parseInt no retorna un número válido, asigna el valor por defecto o null.
-                  setValue("indigenaNacionalidad", isNaN(parsedValue) ? 34 : parsedValue);  // 34 es el valor por defecto
+                  setValue("indigenaNacionalidad", value);  // 34 es el valor por defecto
                 }}
                 placeholder="Seleccione su nacionalidad indigena"
+                value={watch("indigenaNacionalidad") || "34"}
               />
               {errors.indigenaNacionalidad && (
                 <p className="mt-1 text-sm text-error-500">{errors.indigenaNacionalidad.message}</p>
@@ -802,7 +818,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
               {...register("carrera")}
               className={`w-full rounded-md border px-3 py-2 ${errors.carrera ? 'border-red-500' : 'border-gray-300'}`}
             >
-              <option value={defaultData.carrera.id || ""}>{defaultData.carrera.nombre || "" }</option>
+              <option value={defaultData.carrera.nombre|| ""}>{defaultData.carrera.nombre || "" }</option>
             </select>
             {errors.carrera && (
               <p className="text-error-500 text-sm mt-1">{errors.carrera.message}</p>
@@ -897,6 +913,37 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
 
           {editDireccion ? (
             <>
+            {/* Select Pais */}
+            <Controller
+              control={control}
+              name="pais"
+              render={({ field }) => (
+                <div>
+                  <Label>
+                    Pais <span className="text-error-500">*</span>
+                  </Label>
+                  <select
+                    className={`w-full rounded-md border px-3 py-2 ${errors.pais ? 'border-red-500' : 'border-gray-300'}`}
+                    value={field.value?.value || ""}
+                    onChange={(e) => {
+                      const selected = paises.find((p) => p.value === e.target.value);
+                      field.onChange(selected ? { value: selected.value, label: selected.label } : null);
+                    }}
+                  >
+                    <option value="">Seleccione un pais</option>
+                    {paises.map((pais, index) => (
+                      <option key={pais.value || index} value={pais.value}>
+                        {pais.label}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.pais?.label && (
+                    <p className="mt-1 text-sm text-red-500">{errors.pais.label.message}</p>
+                  )}
+                </div>
+              )}
+            />
+
             {/* Select Provincia */}
             <Controller
               control={control}
@@ -995,6 +1042,10 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
           ):(
             <div className="space-y-2">
               <div>
+                <Label>País</Label>
+                <p className="text-sm">{pais?.label}</p>
+              </div>
+              <div>
                 <Label>Provincia</Label>
                 <p className="text-sm">{provincia?.label}</p>
               </div>
@@ -1017,94 +1068,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
           )}
         </div>
       </div>
-      {/* Sección 4: Información Económica */}
-      {/* <div className="rounded-lg border border-gray-200 p-6 dark:border-gray-800">
-        <h3 className="mb-4 text-lg font-semibold">Información Económica</h3>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-          <div>
-            <Label>Ingresos Familiares Mensuales <span className="text-error-500">*</span></Label>
-            <select
-              {...register("ingresosFamiliares")}
-              className={`w-full rounded-md border px-3 py-2 ${errors.ingresosFamiliares  ? 'border-red-500' : 'border-gray-300'}`}
-            >
-              <option value="">Seleccione un rango</option>
-              <option value="1">Menos de $470</option>
-              <option value="2">$470 - $1000</option>
-              <option value="3">Más de $1000</option>
-            </select>
-          </div>
-          <div>
-            <Label>Gastos Mensuales <span className="text-error-500">*</span></Label>
-            <select
-              {...register("gastosMensuales")}
-              className={`w-full rounded-md border px-3 py-2 ${errors.gastosMensuales ? 'border-red-500' : 'border-gray-300'}`}
-            >
-              <option value="">Seleccione un rango</option>
-              <option value="Menos de $100">Menos de $100</option>
-              <option value="$100 - $300">$100 - $300</option>
-              <option value="$301 - $600">$301 - $600</option>
-              <option value="$601 - $1000">$601 - $1000</option>
-              <option value="Más de $1000">Más de $1000</option>
-            </select>
-          </div>
-          <div>
-            <Label>Gastos en Vivienda <span className="text-error-500">*</span></Label>
-            <select
-              {...register("vivienda")}
-              className={`w-full rounded-md border px-3 py-2 ${errors.vivienda ? 'border-red-500' : 'border-gray-300'}`}
-            >
-              <option value="">Seleccione un rango</option>
-              <option value="Menos de $100">Menos de $100</option>
-              <option value="$100 - $300">$100 - $300</option>
-              <option value="$301 - $600">$301 - $600</option>
-              <option value="$601 - $1000">$601 - $1000</option>
-              <option value="Más de $1000">Más de $1000</option>
-            </select>
-          </div>
-          <div>
-            <Label>Gastos en Transporte <span className="text-error-500">*</span></Label>
-            <select
-              {...register("transporte")}
-              className={`w-full rounded-md border px-3 py-2 ${errors.transporte ? 'border-red-500' : 'border-gray-300'}`}
-            >
-              <option value="">Seleccione un rango</option>
-              <option value="Menos de $100">Menos de $100</option>
-              <option value="$100 - $300">$100 - $300</option>
-              <option value="$301 - $600">$301 - $600</option>
-              <option value="$601 - $1000">$601 - $1000</option>
-              <option value="Más de $1000">Más de $1000</option>
-            </select>
-          </div>
-          <div>
-            <Label>Gastos en Alimentación <span className="text-error-500">*</span></Label>
-            <select
-              {...register("alimentacion")}
-              className={`w-full rounded-md border px-3 py-2 ${errors.alimentacion ? 'border-red-500' : 'border-gray-300'}`}
-            >
-              <option value="">Seleccione un rango</option>
-              <option value="Menos de $100">Menos de $100</option>
-              <option value="$100 - $300">$100 - $300</option>
-              <option value="$301 - $600">$301 - $600</option>
-              <option value="$601 - $1000">$601 - $1000</option>
-              <option value="Más de $1000">Más de $1000</option>
-            </select>
-          </div>
-          <div>
-            <Label>Otros Gastos <span className="text-error-500">*</span></Label>
-            <select
-              {...register("otrosGastos")}
-              className={`w-full rounded-md border px-3 py-2 ${errors.otrosGastos ? 'border-red-500' : 'border-gray-300'}`}
-            >
-              <option value="">Seleccione un rango</option>
-              <option value="Menos de $100">Menos de $100</option>
-              <option value="$100 - $300">$100 - $300</option>
-              <option value="$301 - $600">$301 - $600</option>
-              <option value="$601 - $1000">$601 - $1000</option>
-              <option value="Más de $1000">Más de $1000</option>
-            </select>
-          </div>
-        </div>
-      </div> */}
+  
       {/* Sección 5: Información Laboral */}
       <div className="rounded-lg border border-gray-200 p-6 dark:border-gray-800">
         <h3 className="mb-4 text-lg font-semibold">Información Laboral</h3>
@@ -1113,14 +1077,14 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             <Label>Situación Laboral <span className="text-error-500">*</span></Label>
             <Select
               options={[
-                { value: "empleado", label: "Empleado" },
-                { value: "negocio propio", label: "Negocio propio" },
-                { value: "desempleado", label: "Desempleado" },
-                { value: "pensionado", label: "Pensionado" },
-                { value: "otro", label: "Otro" }
+                { value: "EMPLEADO", label: "Empleado" },
+                { value: "NEGOCIO", label: "Negocio propio" },
+                { value: "DESEMPLEADO", label: "Desempleado" },
+                { value: "PENSIONADO", label: "Pensionado" },
+                { value: "OTRO", label: "Otro" }
               ]}
               onChange={(value) => {
-                setValue('situacionLaboral', value as 'empleado' | 'negocio propio' | 'desempleado' | 'pensionado' | 'otro', { shouldValidate: true });
+                setValue('situacionLaboral', value as 'EMPLEADO' | 'NEGOCIO' | 'DESEMPLEADO' | 'PENSIONADO' | 'OTRO', { shouldValidate: true });
                 handleSituacionLaboralChange(value);
               }}
               placeholder="Seleccione su situación laboral"
@@ -1133,7 +1097,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
         </div>
 
         {/* Campos condicionales para Empleado */}
-        {situacionLaboral === "empleado" && (
+        {situacionLaboral === "EMPLEADO" && (
           <div>
             <div>
               <Label>Empresa <span className="text-error-500">*</span></Label>
@@ -1170,7 +1134,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             </div>
           </div>
         )}
-        {situacionLaboral === "negocio propio" && (
+        {situacionLaboral === "NEGOCIO" && (
           <div>
             <div>
               <Label>Nombre delNegocio <span className="text-error-500">*</span></Label>
@@ -1191,7 +1155,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
           </div>
         )}
 
-        {situacionLaboral === "pensionado" && (
+        {situacionLaboral === "PENSIONADO" && (
           <div>
             <Label>Fuente de la pensión <span className="text-error-500">*</span></Label>
             <Input
@@ -1202,7 +1166,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
           </div>
         )}
 
-        {situacionLaboral === "otro" && (
+        {situacionLaboral === "OTRO" && (
           <div>
             <Label>Descripción <span className="text-error-500">*</span></Label>
             <Input
@@ -1212,7 +1176,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             />
           </div>
         )}
-        {situacionLaboral === "desempleado" && (
+        {situacionLaboral === "DESEMPLEADO" && (
           <div>
             <Label>Economicamente dependiente de <span className="text-error-500">*</span></Label>
             <Select
@@ -1223,7 +1187,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
                 { value: "otro", label: "Otro Familiar" }
               ]}
               onChange={(value) => {
-                setValue('laboral.tipo', 'desempleado', { shouldValidate: true });
+                setValue('laboral.tipo', 'DESEMPLEADO', { shouldValidate: true });
                 setValue('laboral.dependiente', value as 'padre' | 'madre' | 'hermano' | 'otro', { shouldValidate: true });
               }}
               placeholder="Seleccione su situación laboral"
@@ -1241,13 +1205,14 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             <Label>Relacion con compañeros <span className="text-error-500">*</span></Label>
             <Select
               options={[
-                { value: "excelente", label: "Excelente" },
-                { value: "buena", label: "Buena" },
-                { value: "regular", label: "Regular" },
-                { value: "mala", label: "Mala" }
+                { value: "EXCELENTE", label: "EXCELENTE" },
+                { value: "BUENA", label: "BUENA" },
+                { value: "REGULAR", label: "REGULAR" },
+                { value: "MALA", label: "MALA" }
               ]}
-              onChange={(value) => setValue("relacionCompa", value as "excelente" | "buena" | "regular" | "mala")}
+              onChange={(value) => setValue("relacionCompa", value as "EXCELENTE" | "BUENA" | "REGULAR" | "MALA")}
               placeholder="Seleccione su relación con compañeros"
+              defaultValue={getValues('relacionCompa')}
             />
             {errors.relacionCompa && (
               <p className="mt-1 text-sm text-error-500">{errors.relacionCompa.message}</p>
@@ -1260,6 +1225,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
                 { value: "S", label: "Si" },
                 { value: "N", label: "No" }
               ]}
+              defaultValue={getValues('integracionUmet')}
               onChange={(value) => setValue("integracionUmet", value as "S" | "N")}
               placeholder="Seleccione si se siente integrado en UMET"
             />
@@ -1271,12 +1237,13 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             <Label>Relacion con el docente <span className="text-error-500">*</span></Label>
             <Select
               options={[
-                { value: "excelente", label: "Excelente" },
-                { value: "buena", label: "Buena" },
-                { value: "regular", label: "Regular" },
-                { value: "mala", label: "Mala" }
+                { value: "EXCELENTE", label: "EXCELENTE" },
+                { value: "BUENA", label: "BUENA" },
+                { value: "REGULAR", label: "REGULAR" },
+                { value: "MALA", label: "MALA" }
               ]}
-              onChange={(value) => setValue("relacionDocente", value as "excelente" | "buena" | "regular" | "mala")}
+              defaultValue={getValues('relacionDocente')}
+              onChange={(value) => setValue("relacionDocente", value as "EXCELENTE" | "BUENA" | "REGULAR" | "MALA")}
               placeholder="Seleccione su relación con el docente"
             />
             {errors.relacionDocente && (
@@ -1287,12 +1254,13 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             <Label>Relacion con los padres <span className="text-error-500">*</span></Label>
             <Select
               options={[
-                { value: "excelente", label: "Excelente" },
-                { value: "buena", label: "Buena" },
-                { value: "regular", label: "Regular" },
-                { value: "mala", label: "Mala" }
+                { value: "EXCELENTE", label: "EXCELENTE" },
+                { value: "BUENA", label: "BUENA" },
+                { value: "REGULAR", label: "REGULAR" },
+                { value: "MALA", label: "MALA" }
               ]}
-              onChange={(value) => setValue("relacionPadres", value as "excelente" | "buena" | "regular" | "mala")}
+              defaultValue={getValues('relacionPadres')}
+              onChange={(value) => setValue("relacionPadres", value as "EXCELENTE" | "BUENA" | "REGULAR" | "MALA")}
               placeholder="Seleccione su relación con los padres"
             />
             {errors.relacionPadres && (
@@ -1304,12 +1272,13 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
               <Label>Relacion con la pareja <span className="text-error-500">*</span></Label>
               <Select
                 options={[
-                  { value: "excelente", label: "Excelente" },
-                  { value: "buena", label: "Buena" },
-                  { value: "regular", label: "Regular" },
-                  { value: "mala", label: "Mala" }
+                  { value: "EXCELENTE", label: "EXCELENTE" },
+                  { value: "BUENA", label: "BUENA" },
+                  { value: "REGULAR", label: "REGULAR" },
+                  { value: "MALA", label: "MALA" }
                 ]}
-                onChange={(value) => setValue("relacionPareja", value as "excelente" | "buena" | "regular" | "mala")}
+                defaultValue={getValues('relacionPareja')}
+                onChange={(value) => setValue("relacionPareja", value as "EXCELENTE" | "BUENA" | "REGULAR" | "MALA")}
                 placeholder="Seleccione su relación con la pareja"
               />
               {errors.relacionPareja && (
@@ -1323,7 +1292,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
       <div className="rounded-lg border border-gray-200 p-6 dark:border-gray-800">
         <h3 className="mb-4 text-lg font-semibold">Familia y Economia</h3>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <div>
+          <div>
             <Label>Tiene internet en casa? <span className="text-error-500">*</span></Label>
             <select
               {...register("internet")}
@@ -1343,7 +1312,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
               {...register("computadora")}
               className={`w-full rounded-md border px-3 py-2 ${errors.computadora ? 'border-red-500' : 'border-gray-300'}`}
             >
-              <option value="">Seleccione una opción</option>
+              <option value="" disabled>Seleccione una opción</option>
               <option value="S">Sí</option>
               <option value="N">No</option>
             </select>
@@ -1358,13 +1327,14 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
               </Label>
               <Select
                 options={[
-                  { value: 'propia', label: 'Propia con servicios basicos' },
-                  { value: 'arrendada', label: 'Arrendada' },
-                  { value: 'familiar', label: 'De un familiar' },
-                  { value: 'prestada', label: 'Prestada' },
+                  { value: 'PROPIA', label: 'PROPIA CON SERVICIOS BASICOS' },
+                  { value: 'ARRENDADA', label: 'ARRENDADA' },
+                  { value: 'FAMILIAR', label: 'DE UN FAMILIAR' },
+                  { value: 'PRESTADA', label: 'PRESTADA' },
                 ]}
-                onChange={(value) => setValue('tipoCasa', value as 'propia' | 'arrendada' | 'familiar' | 'prestada', { shouldValidate: true })}
+                onChange={(value) => setValue('tipoCasa', value as string, { shouldValidate: true })}
                 placeholder="Seleccione su tipo de casa"
+                value={getValues('tipoCasa')}
               />
             </div>
             <div>
@@ -1373,16 +1343,17 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
               </Label>
               <Select
                 options={[
-                  { value: 'Recursos Propios', label: 'Recursos propios' },
-                  { value: 'Padres / Tutores', label: 'Padres / Tutores' },
-                  { value: 'Pareja Sentimental', label: 'Pareja Sentimental' },
-                  { value: 'Hermanos', label: 'Hermanos' },
-                  { value: 'Otros miembros del hogar', label: 'Otros miembros del hogar' },
-                  { value: 'Otros familiares', label: 'Otros familiares' },
-                  { value: 'Beca de estudio', label: 'Beca de estudio' },
-                  { value: 'Crédito educativo', label: 'Crédito educativo' },
-                  { value: 'No registra', label: 'No registra' },
+                  { value: 'RECURSOS PROPIOS', label: 'RECURSOS PROPIOS' },
+                  { value: 'PADRES / TUTORES', label: 'PADRES / TUTORES' },
+                  { value: 'PAREJA SENTIMENTAL', label: 'PAREJA SENTIMENTAL' },
+                  { value: 'HERMANOS', label: 'HERMANOS' },
+                  { value: 'OTROS MIEMBROS DEL HOGAR', label: 'OTROS MIEMBROS DEL HOGAR' },
+                  { value: 'OTROS FAMILIARES', label: 'OTROS FAMILIARES' },
+                  { value: 'BECA DE ESTUDIO', label: 'BECA DE ESTUDIO' },
+                  { value: 'CREDITO EDUCATIVO', label: 'CREDITO EDUCATIVO' },
+                  { value: 'NO REGISTRA', label: 'NO REGISTRA' },
                 ]}
+                value={getValues('origenRecursos')}
                 onChange={(value) =>
                   setValue('origenRecursos', value as string, { shouldValidate: true })
                 }
@@ -1395,19 +1366,20 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
               </Label>
               <Select
                 options={[
-                  { value: 'Sueldos y salarios propios', label: 'Sueldos y salarios propios' },
-                  { value: 'Sueldos y salarios de padres o tutores', label: 'Sueldos y salarios de padres o tutores' },
-                  { value: 'Sueldos y salarios de hijos', label: 'Sueldos y salarios de hijos' },
-                  { value: 'Sueldos y salarios de otros miembros del hogar', label: 'Sueldos y salarios de otros miembros del hogar' },
-                  { value: 'Venta de bienes y/o servicios', label: 'Venta de bienes y/o servicios' },
-                  { value: 'Rentas (inversiones, bienes)', label: 'Rentas (inversiones, bienes)' },
-                  { value: 'Remesas', label: 'Remesas' },
-                  { value: 'Pensiones', label: 'Pensiones' },
-                  { value: 'Apoyos económicos de otras personas fuera del hogar', label: 'Apoyos económicos de otras personas fuera del hogar' },
-                  { value: 'Apoyos económicos del Estado', label: 'Apoyos económicos del Estado' },
-                  { value: 'Apoyos económicos de ONG', label: 'Apoyos económicos de ONG' },
-                  { value: 'Donaciones / Caridad', label: 'Donaciones / Caridad' },
+                  { value: 'SUELDOS Y SALARIOS PROPIOS', label: 'SUELDOS Y SALARIOS PROPIOS' },
+                  { value: 'SUELDOS Y SALARIOS DE PADRES O TUTORES', label: 'SUELDOS Y SALARIOS DE PADRES O TUTORES' },
+                  { value: 'SUELDOS Y SALARIOS DE HIJOS', label: 'SUELDOS Y SALARIOS DE HIJOS' },
+                  { value: 'SUELDOS Y SALARIOS DE OTROS MIEMBROS DEL HOGAR', label: 'SUELDOS Y SALARIOS DE OTROS MIEMBROS DEL HOGAR' },
+                  { value: 'VENTA DE BIENES Y/O SERVICIOS', label: 'VENTA DE BIENES Y/O SERVICIOS' },
+                  { value: 'RENTAS (INVERSIONES, BIENES)', label: 'RENTAS (INVERSIONES, BIENES)' },
+                  { value: 'REMESAS', label: 'REMESAS' },
+                  { value: 'PENSIONES', label: 'PENSIONES' },
+                  { value: 'APOYOS ECONOMICOS DE OTRAS PERSONAS FUERA DEL HOGAR', label: 'APOYOS ECONOMICOS DE OTRAS PERSONAS FUERA DEL HOGAR' },
+                  { value: 'APOYOS ECONOMICOS DEL ESTADO', label: 'APOYOS ECONOMICOS DEL ESTADO' },
+                  { value: 'APOYOS ECONOMICOS DE ONG', label: 'APOYOS ECONOMICOS DE ONG' },
+                  { value: 'DONACIONES / CARIDAD', label: 'DONACIONES / CARIDAD' },
                 ]}
+                value={getValues('origenEstudios')}
                 onChange={(value) =>
                   setValue('origenEstudios', value as string, { shouldValidate: true })
                 }
@@ -1420,9 +1392,9 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
               </Label>
             <Select
               options={[
-                { value: 'cabezaHogar', label: 'Cabeza de hogar' },
-                { value: 'familia', label: 'Vive con familiar' },
-                { value: 'independiente', label: 'Independiente' },
+                { value: 'cabezaHogar', label: 'CABEZA DE HOGAR' },
+                { value: 'familia', label: 'VIVE CON FAMILIAR' },
+                { value: 'independiente', label: 'INDEPENDIENTE' },
               ]}
               onChange={(value) => {
                 setValue('estadoFamiliar', value as 'cabezaHogar' | 'familia' | 'independiente', { shouldValidate: true });
@@ -1594,7 +1566,6 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
                 if (value === 'N') {
                   setValue('discapacidad', undefined, { shouldValidate: true });
                 } else {
-                  setValue('discapacidad', { tipo: 'fisica', porcentaje: 0, carnet: '', tieneDiagnosticoPresuntivo: 'NO' }, { shouldValidate: true });
                   setValue('discapacidad.carnet', getValues('cedula') );
                 }
               }}
@@ -1615,14 +1586,14 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
                   </Label>
                   <Select
                     options={[
-                      { value: 'fisica', label: 'Física' },
-                      { value: 'psiquica', label: 'Psíquica' },
-                      { value: 'auditiva', label: 'Auditiva' },
-                      { value: 'visual', label: 'Visual' },
-                      { value: 'intelectual', label: 'Intelectual' },
-                      { value: 'multiple', label: 'Múltiple' },
+                      { value: 'FISICA', label: 'Física' },
+                      { value: 'PSIQUICA', label: 'Psíquica' },
+                      { value: 'AUDITIVA', label: 'Auditiva' },
+                      { value: 'VISUAL', label: 'Visual' },
+                      { value: 'INTELECTUAL', label: 'Intelectual' },
+                      { value: 'MULTIPLE', label: 'Múltiple' },
                     ]}
-                    onChange={(value) => setValue('discapacidad.tipo', value as 'fisica' | 'psiquica' | 'auditiva' | 'visual' | 'intelectual' | 'multiple', { shouldValidate: true })}
+                    onChange={(value) => setValue('discapacidad.tipo', value as 'FISICA' | 'PSIQUICA' | 'AUDITIVA' | 'VISUAL' | 'INTELECTUAL' | 'MULTIPLE', { shouldValidate: true })}
                     placeholder="Seleccione el tipo de discapacidad"
                   />
                 </div>
@@ -1660,12 +1631,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
                   <Label>
                     Número de carné de discapacidad <span className="text-error-500">*</span>
                   </Label>
-                  <Input
-                    register={register('discapacidad.carnet')}
-                    error={!!errors.discapacidad?.carnet}
-                    hint={errors.discapacidad?.carnet?.message}
-                    readOnly={true}
-                  />
+                  <p>{getValues('discapacidad.carnet')}</p>
                 </div>
               </div>
             </div>
