@@ -156,11 +156,11 @@ const formSchema = z.object({
   ).optional(),
 
   // Relaciones Personales
-  relacionCompa: z.enum(["EXCELENTE", "BUENA", "REGULAR", "MALA"], { required_error: "La relación con compañeros es requerida" }),
+  relacionCompa: z.enum(["MUY BUENA", "BUENA", "REGULAR", "MALA"], { required_error: "La relación con compañeros es requerida" }),
   integracionUmet: z.enum(["S", "N"], { required_error: "La integración en UMET es requerida" }),
-  relacionDocente: z.enum(["EXCELENTE", "BUENA", "REGULAR", "MALA"], { required_error: "La relación con el docente es requerida" }),
-  relacionPadres: z.enum(["EXCELENTE", "BUENA", "REGULAR", "MALA"], { required_error: "La relación con los padres es requerida" }),
-  relacionPareja: z.enum(["EXCELENTE", "BUENA", "REGULAR", "MALA"], { required_error: "La relación con la pareja es requerida" }).optional(),
+  relacionDocente: z.enum(["MUY BUENA", "BUENA", "REGULAR", "MALA"], { required_error: "La relación con el docente es requerida" }),
+  relacionPadres: z.enum(["MUY BUENA", "BUENA", "REGULAR", "MALA"], { required_error: "La relación con los padres es requerida" }),
+  relacionPareja: z.enum(["MUY BUENA", "BUENA", "REGULAR", "MALA"], { required_error: "La relación con la pareja es requerida" }).optional(),
 
   // Familia
   estadoFamiliar: z.enum(["cabezaHogar", "familia", "independiente"], { required_error: "El estado familiar es requerido" }),
@@ -1205,12 +1205,12 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             <Label>Relacion con compañeros <span className="text-error-500">*</span></Label>
             <Select
               options={[
-                { value: "EXCELENTE", label: "EXCELENTE" },
+                { value: "MUY BUENA", label: "MUY BUENA" },
                 { value: "BUENA", label: "BUENA" },
                 { value: "REGULAR", label: "REGULAR" },
                 { value: "MALA", label: "MALA" }
               ]}
-              onChange={(value) => setValue("relacionCompa", value as "EXCELENTE" | "BUENA" | "REGULAR" | "MALA")}
+              onChange={(value) => setValue("relacionCompa", value as "MUY BUENA" | "BUENA" | "REGULAR" | "MALA")}
               placeholder="Seleccione su relación con compañeros"
               defaultValue={getValues('relacionCompa')}
             />
@@ -1237,13 +1237,13 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             <Label>Relacion con el docente <span className="text-error-500">*</span></Label>
             <Select
               options={[
-                { value: "EXCELENTE", label: "EXCELENTE" },
+                { value: "MUY BUENA", label: "MUY BUENA" },
                 { value: "BUENA", label: "BUENA" },
                 { value: "REGULAR", label: "REGULAR" },
                 { value: "MALA", label: "MALA" }
               ]}
               defaultValue={getValues('relacionDocente')}
-              onChange={(value) => setValue("relacionDocente", value as "EXCELENTE" | "BUENA" | "REGULAR" | "MALA")}
+              onChange={(value) => setValue("relacionDocente", value as "MUY BUENA" | "BUENA" | "REGULAR" | "MALA")}
               placeholder="Seleccione su relación con el docente"
             />
             {errors.relacionDocente && (
@@ -1254,13 +1254,13 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             <Label>Relacion con los padres <span className="text-error-500">*</span></Label>
             <Select
               options={[
-                { value: "EXCELENTE", label: "EXCELENTE" },
+                { value: "MUY BUENA", label: "MUY BUENA" },
                 { value: "BUENA", label: "BUENA" },
                 { value: "REGULAR", label: "REGULAR" },
                 { value: "MALA", label: "MALA" }
               ]}
               defaultValue={getValues('relacionPadres')}
-              onChange={(value) => setValue("relacionPadres", value as "EXCELENTE" | "BUENA" | "REGULAR" | "MALA")}
+              onChange={(value) => setValue("relacionPadres", value as "MUY BUENA" | "BUENA" | "REGULAR" | "MALA")}
               placeholder="Seleccione su relación con los padres"
             />
             {errors.relacionPadres && (
@@ -1272,13 +1272,13 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
               <Label>Relacion con la pareja <span className="text-error-500">*</span></Label>
               <Select
                 options={[
-                  { value: "EXCELENTE", label: "EXCELENTE" },
+                  { value: "MUY BUENA", label: "MUY BUENA" },
                   { value: "BUENA", label: "BUENA" },
                   { value: "REGULAR", label: "REGULAR" },
                   { value: "MALA", label: "MALA" }
                 ]}
                 defaultValue={getValues('relacionPareja')}
-                onChange={(value) => setValue("relacionPareja", value as "EXCELENTE" | "BUENA" | "REGULAR" | "MALA")}
+                onChange={(value) => setValue("relacionPareja", value as "MUY BUENA" | "BUENA" | "REGULAR" | "MALA")}
                 placeholder="Seleccione su relación con la pareja"
               />
               {errors.relacionPareja && (

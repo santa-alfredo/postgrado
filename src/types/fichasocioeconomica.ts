@@ -43,11 +43,11 @@ export type FichaSocioeconomica = {
     computadora: "S" | "N" | "";
     origenRecursos: string;
     origenEstudios: string;
-    relacionCompa?: "EXCELENTE" | "BUENA"| "REGULAR" | "MALA";
+    relacionCompa?: "MUY BUENA" | "BUENA"| "REGULAR" | "MALA";
     integracionUmet?: "S" | "N";
-    relacionDocente?: "EXCELENTE" | "BUENA"| "REGULAR" | "MALA";
-    relacionPadres?: "EXCELENTE" | "BUENA"| "REGULAR" | "MALA";
-    relacionPareja?: "EXCELENTE" | "BUENA"| "REGULAR" | "MALA";
+    relacionDocente?: "MUY BUENA" | "BUENA"| "REGULAR" | "MALA";
+    relacionPadres?: "MUY BUENA" | "BUENA"| "REGULAR" | "MALA";
+    relacionPareja?: "MUY BUENA" | "BUENA"| "REGULAR" | "MALA";
 };
 
 export type FichaResponse = {
