@@ -150,7 +150,7 @@ const formSchema = z.object({
       }),
       z.object({
         tipo: z.literal('DESEMPLEADO'),
-        dependiente: z.enum(["padre", "madre", "hermano", "otro"], { required_error: "El dependiente es requerido" }),
+        dependiente: z.enum(["PADRE", "MADRE", "HERMANO", "OTRO"], { required_error: "El dependiente es requerido" }),
       }),
     ]
   ).optional(),
@@ -163,7 +163,7 @@ const formSchema = z.object({
   relacionPareja: z.enum(["MUY BUENA", "BUENA", "REGULAR", "MALA"], { required_error: "La relación con la pareja es requerida" }).optional(),
 
   // Familia
-  estadoFamiliar: z.enum(["cabezaHogar", "familia", "independiente"], { required_error: "El estado familiar es requerido" }),
+  estadoFamiliar: z.enum(["CABEZAHOGAR", "FAMILIA", "INDEPENDIENTE"], { required_error: "El estado familiar es requerido" }),
   tipoCasa: z.string().min(1, "El tipo de casa es requerido"),
   origenRecursos: z.string().min(1, "El tipo de origen de recurso es requerido"),
   origenEstudios: z.string().min(1, "El tipo de origen de recurso es requerido"),
@@ -172,7 +172,7 @@ const formSchema = z.object({
       z.object({
         sueldo: z.string().min(1, "El sueldo es requerido"),
         edad: z.string().min(1, "La edad es requerida"),
-        parentesco: z.enum(["hijo", "padre", "madre", "hermano", "conyuge", "otro"], { required_error: "El parentesco es requerido" }),
+        parentesco: z.enum(["HIJO", "PADRE", "MADRE", "HERMANO", "CONYUGE", "OTRO"], { required_error: "El parentesco es requerido" }),
         ocupacion: z.string().min(1, "La Instrucción Académica es requerida"),
       })
     )
@@ -504,7 +504,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
       // Si ya tienes la provincia con label, no haces la llamada al backend
       fetchCiudades();
     }
-  }, [provincia, setValue]);  // Se ejecuta cuando `provincia` cambia
+  }, [provincia, setValue, editDireccion]);  // Se ejecuta cuando `provincia` cambia
 
   // Cuando cambia la ciudad, obtener las parroquias
   useEffect(() => {
@@ -522,7 +522,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
 
     // Solo ejecuta si ciudad está definida
     fetchParroquias();
-  }, [ciudad, setValue]);  // Se ejecuta cuando `ciudad` cambia
+  }, [ciudad, setValue, editDireccion]);  // Se ejecuta cuando `ciudad` cambia
 
   // Solo activar edición si no hay colegio en el primer render
   useEffect(() => {
@@ -1103,8 +1103,12 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
               <Label>Empresa <span className="text-error-500">*</span></Label>
               <Input
                 register={register("laboral.empresa")}
-                error={!!(errors.laboral as any)?.empresa}
-                hint={(errors.laboral as any)?.empresa?.message}
+                error={
+                  errors.laboral?.type === "EMPLEADO" &&
+                  "empresa" in errors.laboral &&
+                  !!errors.laboral.empresa
+                }
+                hint={((errors.laboral as unknown) as FormData["laboral"] & { empresa?: { message?: string } })?.empresa?.message}
               />
             </div>
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -1112,7 +1116,11 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
                 <Label>Cargo <span className="text-error-500">*</span></Label>
                 <Input
                   register={register("laboral.cargo")}
-                  error={!!(errors.laboral as any)?.cargo}
+                  error={
+                    errors.laboral?.type === "EMPLEADO" &&
+                    "cargo" in errors.laboral &&
+                    !!errors.laboral.cargo
+                  }
                   hint={(errors.laboral as any)?.cargo?.message}
                 />
               </div>
@@ -1181,14 +1189,14 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             <Label>Economicamente dependiente de <span className="text-error-500">*</span></Label>
             <Select
               options={[
-                { value: "padre", label: "Padre" },
-                { value: "madre", label: "Madre" },
-                { value: "hermano", label: "Hermano" },
-                { value: "otro", label: "Otro Familiar" }
+                { value: "PADRE", label: "PADRE" },
+                { value: "MADRE", label: "MADRE" },
+                { value: "HERMANO", label: "HERMANO" },
+                { value: "OTRO", label: "OTRO FAMILIAR" }
               ]}
               onChange={(value) => {
                 setValue('laboral.tipo', 'DESEMPLEADO', { shouldValidate: true });
-                setValue('laboral.dependiente', value as 'padre' | 'madre' | 'hermano' | 'otro', { shouldValidate: true });
+                setValue('laboral.dependiente', value as 'PADRE' | 'MADRE' | 'HERMANO' | 'OTRO', { shouldValidate: true });
               }}
               placeholder="Seleccione su situación laboral"
             >
@@ -1392,13 +1400,13 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
               </Label>
             <Select
               options={[
-                { value: 'cabezaHogar', label: 'CABEZA DE HOGAR' },
-                { value: 'familia', label: 'VIVE CON FAMILIAR' },
-                { value: 'independiente', label: 'INDEPENDIENTE' },
+                { value: 'CABEZAHOGAR', label: 'CABEZA DE HOGAR' },
+                { value: 'FAMILIA', label: 'VIVE CON FAMILIAR' },
+                { value: 'INDEPENDIENTE', label: 'INDEPENDIENTE' },
               ]}
               onChange={(value) => {
-                setValue('estadoFamiliar', value as 'cabezaHogar' | 'familia' | 'independiente', { shouldValidate: true });
-                if (value === 'independiente') {
+                setValue('estadoFamiliar', value as 'CABEZAHOGAR' | 'FAMILIA' | 'INDEPENDIENTE', { shouldValidate: true });
+                if (value === 'INDEPENDIENTE') {
                   setValue('miembros', [], { shouldValidate: true });
                 }
               }}
@@ -1408,11 +1416,11 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
               <p className="mt-1 text-sm text-error-500">{errors.estadoFamiliar.message}</p>
             )}
             </div>
-          {/* Miembros (condicional para cabezaHogar o vivePadres) */}
-          {(estadoFamiliar === 'cabezaHogar' || estadoFamiliar === 'familia') && (
+          {/* Miembros (condicional para CABEZAHOGAR o vivePadres) */}
+          {(estadoFamiliar === 'CABEZAHOGAR' || estadoFamiliar === 'FAMILIA') && (
             <div className="col-span-1 sm:col-span-2">
               <h4 className="mb-4 text-lg font-semibold">
-                {estadoFamiliar === 'cabezaHogar' ? 'Miembros de la familia' : 'Miembros del hogar'}
+                {estadoFamiliar === 'CABEZAHOGAR' ? 'Miembros de la familia' : 'Miembros del hogar'}
               </h4>
               {fields.map((field, index) => (
                 <div key={field.id} className="mb-4 rounded-md border border-gray-300 p-4">
@@ -1424,14 +1432,14 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
                       </Label>
                       <Select
                         options={[
-                          { value: 'conyuge', label: 'Cónyuge' },
-                          { value: 'hijo', label: 'Hijo/a' },
-                          { value: 'padre', label: 'Padre' },
-                          { value: 'madre', label: 'Madre' },
-                          { value: 'hermano', label: 'Hermano/a' },
-                          { value: 'otro', label: 'Otro' },
+                          { value: 'CONYUGE', label: 'CÓNYUGE' },
+                          { value: 'HIJO', label: 'HIJO/A' },
+                          { value: 'PADRE', label: 'PADRE' },
+                          { value: 'MADRE', label: 'MADRE' },
+                          { value: 'HERMANO', label: 'HERMANO/a' },
+                          { value: 'OTRO', label: 'OTRO' },
                         ]}
-                        onChange={(value) => setValue(`miembros.${index}.parentesco`, value as 'conyuge' | 'hijo' | 'padre' | 'madre' | 'hermano' | 'otro')}
+                        onChange={(value) => setValue(`miembros.${index}.parentesco`, value as 'CONYUGE' | 'HIJO' | 'PADRE' | 'MADRE' | 'HERMANO' | 'OTRO')}
                         placeholder="Seleccione el parentesco"
                       />
                       {errors.miembros?.[index]?.parentesco && (
@@ -1537,7 +1545,7 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
               <button
                 type="button"
                 className="mt-4 rounded-md bg-indigo-500 px-4 py-2 text-white hover:bg-indigo-600"
-                onClick={() => append({ sueldo: "", edad: "", parentesco: "otro", ocupacion: "otro" })}
+                onClick={() => append({ sueldo: "", edad: "", parentesco: "OTRO", ocupacion: "otro" })}
               >
                 Agregar miembro
               </button>
@@ -1710,12 +1718,12 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
             </Label>
             <Select
               options={[
-                { value: 'conyuge', label: 'Cónyuge' },
-                { value: 'hijo', label: 'Hijo/a' },
-                { value: 'padre', label: 'Padre' },
-                { value: 'madre', label: 'Madre' },
-                { value: 'hermano', label: 'Hermano/a' },
-                { value: 'otro', label: 'Otro' },
+                { value: 'CONYUGE', label: 'CÓNYUGE' },
+                { value: 'HIJO', label: 'HIJO/A' },
+                { value: 'PADRE', label: 'PADRE' },
+                { value: 'MADRE', label: 'MADRE' },
+                { value: 'HERMANO', label: 'HERMANO/A' },
+                { value: 'OTRO', label: 'OTRO' },
               ]}
               onChange={(value) => {
                 setValue('contactoParentesco', value);
