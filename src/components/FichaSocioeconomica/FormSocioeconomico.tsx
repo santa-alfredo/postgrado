@@ -1131,9 +1131,9 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
                   className={`w-full rounded-md border px-3 py-2 ${!!(errors.laboral as any)?.sueldo ? 'border-red-500' : 'border-gray-300'}`}
                 >
                   <option value="">Seleccione un rango</option>
-                  <option value="0">Menos de $470</option>
-                  <option value="1">$470 - $1000</option>
-                  <option value="2">Más de $1000</option>
+                  <option value="1">Menos de $470</option>
+                  <option value="2">$470 - $1000</option>
+                  <option value="3">Más de $1000</option>
                 </select>
                 {errors.laboral && (errors.laboral as any).sueldo && (
                   <p className="text-error-500 text-sm mt-1">{(errors.laboral as any).sueldo?.message}</p>
@@ -1488,10 +1488,10 @@ export default function FormSocioeconomico({ onSuccess, defaultData }: Props) {
                         }`}
                       >
                         <option value="">Seleccione un rango</option>
-                        <option value="No Trabaja">No Trabaja</option>
-                        <option value="Menos de $470">Menos de $470</option>
-                        <option value="$470 - $1000">$470 - $1000</option>
-                        <option value="Mas de $1000">Más de $1000</option>
+                        <option value="0">No Trabaja</option>
+                        <option value="1">Menos de $470</option>
+                        <option value="2">$470 - $1000</option>
+                        <option value="3">Más de $1000</option>
                       </select>
                       {errors.miembros?.[index]?.sueldo && (
                         <p className="text-error-500 text-sm mt-1">
